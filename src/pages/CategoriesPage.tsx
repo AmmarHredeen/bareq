@@ -21,7 +21,7 @@ import {
 import { CategoryForm } from '@/features/categories/components/CategoryForm';
 import { CategoryTable } from '@/features/categories/components/CategoryTable';
 import type { CategoryFormValues } from '@/features/categories/schemas/category.schema';
-import type { Category } from '@/types/database.types';
+import type { Category } from '@/types/entities.types';
 import { APP } from '@/constants/app';
 
 type StatusFilter = '' | 'active' | 'inactive';

@@ -1,7 +1,7 @@
 import { Filter } from 'lucide-react';
 import { Select } from '@/components/ui';
 import { PRODUCT_STATUS_OPTIONS } from '@/constants/app';
-import type { Category, Brand, ProductStatus } from '@/types/database.types';
+import type { Category, Brand, ProductStatus } from '@/types/entities.types';
 
 export type VisibilityFilter = '' | 'app' | 'newsletter';
 

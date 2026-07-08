@@ -6,7 +6,7 @@ import type { UseFormRegisterReturn } from 'react-hook-form';
 import { brandSchema, type BrandFormValues } from '../schemas/brand.schema';
 import { Input, Textarea, Button } from '@/components/ui';
 import { cn } from '@/utils/cn';
-import type { Brand } from '@/types/database.types';
+import type { Brand } from '@/types/entities.types';
 
 interface BrandFormProps {
   initialData?: Brand | null;

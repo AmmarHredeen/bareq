@@ -18,7 +18,7 @@ import { useBrands, useBrandMutations } from '@/features/brands/hooks/useBrands'
 import { BrandForm } from '@/features/brands/components/BrandForm';
 import { BrandTable } from '@/features/brands/components/BrandTable';
 import type { BrandFormValues } from '@/features/brands/schemas/brand.schema';
-import type { Brand } from '@/types/database.types';
+import type { Brand } from '@/types/entities.types';
 import { APP } from '@/constants/app';
 
 type StatusFilter = '' | 'active' | 'inactive';

@@ -1,6 +1,12 @@
 import { Select } from '@/components/ui';
-import { ORDER_STATUS_OPTIONS, ORDER_FULFILLMENT_OPTIONS } from '@/constants/app';
-import type { OrderStatus, OrderFulfillmentType } from '@/types/database.types';
+import {
+  ORDER_STATUS_OPTIONS,
+  ORDER_FULFILLMENT_OPTIONS,
+} from '@/constants/app';
+import type {
+  OrderStatus,
+  OrderFulfillmentType,
+} from '@/types/order.types';
 
 interface OrderFiltersProps {
   status: OrderStatus | '';
@@ -20,14 +26,23 @@ export function OrderFilters({
       <Select
         value={status}
         placeholder="كل الحالات"
-        options={ORDER_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+        options={ORDER_STATUS_OPTIONS.map((o) => ({
+          value: o.value,
+          label: o.label,
+        }))}
         onChange={(e) => onStatusChange(e.target.value as OrderStatus | '')}
       />
+
       <Select
         value={fulfillmentType}
         placeholder="كل أنواع التسليم"
-        options={ORDER_FULFILLMENT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-        onChange={(e) => onFulfillmentChange(e.target.value as OrderFulfillmentType | '')}
+        options={ORDER_FULFILLMENT_OPTIONS.map((o) => ({
+          value: o.value,
+          label: o.label,
+        }))}
+        onChange={(e) =>
+          onFulfillmentChange(e.target.value as OrderFulfillmentType | '')
+        }
       />
     </div>
   );

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import { QUERY_KEYS } from '@/constants/queryKeys';
-import type { Order } from '@/types/database.types';
+import type { Order } from '@/types/order.types';
 
 interface Options {
   onNewOrder?: (order: Order) => void;

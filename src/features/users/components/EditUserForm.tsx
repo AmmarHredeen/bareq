@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input, Button } from '@/components/ui';
 import { editUserSchema, type EditUserFormValues } from '../schemas/user.schema';
-import type { Profile } from '@/types/database.types';
+import type { Profile } from '@/types/entities.types';
 
 interface EditUserFormProps {
   user: Profile;

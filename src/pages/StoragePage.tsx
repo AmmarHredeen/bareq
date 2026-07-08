@@ -22,7 +22,7 @@ import {
 import { StorageForm } from '@/features/storage/components/StorageForm';
 import { StorageTable } from '@/features/storage/components/StorageTable';
 import type { StorageFormValues } from '@/features/storage/schemas/storage.schema';
-import type { StorageOption } from '@/types/database.types';
+import type { StorageOption } from '@/types/entities.types';
 import { APP } from '@/constants/app';
 
 type StatusFilter = '' | 'active' | 'inactive';

@@ -2,7 +2,8 @@ import { supabase } from '@/lib/supabase';
 import type {
   DashboardStats,
   ProductWithRelations,
-} from '@/types/database.types';
+} from '@/types/entities.types';
+
 
 export const dashboardService = {
   /**

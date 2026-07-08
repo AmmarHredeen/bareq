@@ -5,7 +5,7 @@ import {
   resetPasswordSchema,
   type ResetPasswordValues,
 } from '../schemas/user.schema';
-import type { Profile } from '@/types/database.types';
+import type { Profile } from '@/types/entities.types';
 
 interface ResetPasswordFormProps {
   user: Profile;

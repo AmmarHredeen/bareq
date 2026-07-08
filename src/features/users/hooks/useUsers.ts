@@ -6,7 +6,7 @@ import {
   type UpdateUserInput,
   type CreateManagerInput,
 } from '@/services/users.service';
-import type { UserRole } from '@/types/database.types';
+import type { UserRole } from '@/types/entities.types';
 
 export const usersKeys = {
   all: ['users'] as const,

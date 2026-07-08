@@ -23,7 +23,7 @@ import {
   TableSkeleton,
 } from '@/components/ui';
 import { APP, USER_ROLE_OPTIONS } from '@/constants/app';
-import type { Profile, UserRole } from '@/types/database.types';
+import type { Profile, UserRole } from '@/types/entities.types';
 import type { UpgradeRequest } from '@/types/upgrade-request.types';
 
 const STATUS_OPTIONS = [

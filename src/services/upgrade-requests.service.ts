@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { UpgradeRequest } from '@/types/upgrade-request.types';
-import type { Profile } from '@/types/database.types';
+import type { Profile } from '@/types/entities.types';
 
 // جدول upgrade_requests ليس في الأنواع المولّدة
 const tb = () => (supabase as any).from('upgrade_requests');

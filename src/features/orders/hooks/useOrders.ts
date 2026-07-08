@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ordersService, type OrderFilters } from '@/services/orders.service';
 import { QUERY_KEYS } from '@/constants/queryKeys';
-import type { OrderFulfillmentType } from '@/types/database.types';
+import type { OrderFulfillmentType } from '@/types/order.types';
 
 export function useOrders(params: OrderFilters) {
   return useQuery({

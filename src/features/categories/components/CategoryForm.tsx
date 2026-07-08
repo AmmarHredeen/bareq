@@ -9,7 +9,7 @@ import {
 } from '../schemas/category.schema';
 import { Input, Textarea, Button } from '@/components/ui';
 import { cn } from '@/utils/cn';
-import type { Category } from '@/types/database.types';
+import type { Category } from '@/types/entities.types';
 
 interface CategoryFormProps {
   initialData?: Category | null;

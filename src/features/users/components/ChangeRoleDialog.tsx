@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Modal, Button, Select, Badge } from '@/components/ui';
 import { USER_ROLE_META } from '@/constants/app';
-import type { Profile, UserRole } from '@/types/database.types';
+import type { Profile, UserRole } from '@/types/entities.types';
 
 interface ChangeRoleDialogProps {
   user: Profile | null;

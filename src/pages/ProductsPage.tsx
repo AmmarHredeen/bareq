@@ -26,7 +26,7 @@ import {
   type VisibilityFilter,
 } from '@/features/products/components/ProductFilters';
 import type { ProductFormValues } from '@/features/products/schemas/product.schema';
-import type { ProductWithRelations, ProductStatus } from '@/types/database.types';
+import type { ProductWithRelations, ProductStatus } from '@/types/entities.types';
 import { APP } from '@/constants/app';
 
 export function ProductsPage() {

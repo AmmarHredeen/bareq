@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Select } from '@/components/ui';
 import { ORDER_FULFILLMENT_OPTIONS } from '@/constants/app';
-import type { OrderFulfillmentType } from '@/types/database.types';
+import type { OrderFulfillmentType } from '@/types/order.types';
 
 interface DeliverFormProps {
   defaultValue: OrderFulfillmentType;

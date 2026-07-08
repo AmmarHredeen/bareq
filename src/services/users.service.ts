@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Profile, UserRole } from '@/types/database.types';
+import type { Profile, UserRole } from '@/types/entities.types';
 import type { PaginatedResult, QueryParams } from '@/types/common.types';
 
 const TABLE = 'profiles';

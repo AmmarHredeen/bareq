@@ -1,7 +1,7 @@
 import { Pencil, Trash2, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { formatDate } from '@/utils/format';
-import type { Category } from '@/types/database.types';
+import type { Category } from '@/types/entities.types';
 
 interface CategoryTableProps {
   categories: Category[];

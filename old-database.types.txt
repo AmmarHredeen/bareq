@@ -6,6 +6,49 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+  // ===== أنواع مساعدة مختصرة =====
+export type Profile = Database['public']['Tables']['profiles']['Row'];
+export type UserRole = Database['public']['Enums']['user_role'];
+export type Brand = Database['public']['Tables']['brands']['Row'];
+export type Category = Database['public']['Tables']['categories']['Row'];
+export type Material = Database['public']['Tables']['materials']['Row'];
+export type Product = Database['public']['Tables']['products']['Row'];
+export type StorageOption = Database['public']['Tables']['storage_options']['Row'];
+export type ProductStatus = Database['public']['Enums']['product_status'];
+
+export interface ProductWithRelations extends Product {
+  category: { id: string; name: string } | null;
+  brand: { id: string; name: string } | null;
+  storage_option: { id: string; label: string } | null;
+}
+
+export interface DashboardStats {
+  total_products: number;
+  active_products: number;
+  in_app: number;
+  in_newsletter: number;
+  total_categories: number;
+  total_brands: number;
+}
+export type Order = Database['public']['Tables']['orders']['Row'];
+export type OrderItem = Database['public']['Tables']['order_items']['Row'];
+
+export type OrderStatus = Database['public']['Enums']['order_status'];
+
+export type OrderFulfillmentType =
+  Database['public']['Enums']['order_fulfillment_type'];
+
+
+// علاقة الطلب بالعميل والعناصر (نتيجة الـ select المخصّص)
+export type OrderWithRelations = Order & {
+  customer: Pick<
+    Database['public']['Tables']['profiles']['Row'],
+    'id' | 'full_name' | 'email' | 'phone' | 'shop_name'
+  > | null;
+  items: OrderItem[];
+};
+
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -123,9 +166,44 @@ export type Database = {
         }
         Relationships: []
       }
+      materials: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
-          color: string | null
           created_at: string
           id: string
           order_id: string
@@ -137,7 +215,6 @@ export type Database = {
           unit_price: number
         }
         Insert: {
-          color?: string | null
           created_at?: string
           id?: string
           order_id: string
@@ -201,8 +278,6 @@ export type Database = {
           fulfillment_type: Database["public"]["Enums"]["order_fulfillment_type"]
           id: string
           order_number: string
-          payment_method: Database["public"]["Enums"]["order_payment_method"]
-          payment_status: Database["public"]["Enums"]["order_payment_status"]
           reject_reason: string | null
           rejected_at: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -227,8 +302,6 @@ export type Database = {
           fulfillment_type?: Database["public"]["Enums"]["order_fulfillment_type"]
           id?: string
           order_number: string
-          payment_method?: Database["public"]["Enums"]["order_payment_method"]
-          payment_status?: Database["public"]["Enums"]["order_payment_status"]
           reject_reason?: string | null
           rejected_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -253,8 +326,6 @@ export type Database = {
           fulfillment_type?: Database["public"]["Enums"]["order_fulfillment_type"]
           id?: string
           order_number?: string
-          payment_method?: Database["public"]["Enums"]["order_payment_method"]
-          payment_status?: Database["public"]["Enums"]["order_payment_status"]
           reject_reason?: string | null
           rejected_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -263,15 +334,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "orders_user_id_profiles_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       products: {
         Row: {
@@ -302,6 +365,7 @@ export type Database = {
           barcode?: string | null
           brand_id: string
           category_id: string
+          color?: string | null
           cost?: number
           created_at?: string
           created_by?: string | null
@@ -326,6 +390,7 @@ export type Database = {
           barcode?: string | null
           brand_id?: string
           category_id?: string
+          color?: string | null
           cost?: number
           created_at?: string
           created_by?: string | null
@@ -359,6 +424,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
             referencedColumns: ["id"]
           },
           {
@@ -466,54 +538,6 @@ export type Database = {
         }
         Relationships: []
       }
-      upgrade_requests: {
-        Row: {
-          created_at: string
-          id: string
-          manager_name: string
-          rejection_reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          shop_address: string
-          shop_landline: string | null
-          shop_name: string
-          shop_phone: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          manager_name: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          shop_address: string
-          shop_landline?: string | null
-          shop_name: string
-          shop_phone: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          manager_name?: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          shop_address?: string
-          shop_landline?: string | null
-          shop_name?: string
-          shop_phone?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       vw_orders_summary: {
@@ -556,15 +580,7 @@ export type Database = {
           total_usd: number | null
           user_id: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "orders_user_id_profiles_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Functions: {
@@ -576,8 +592,6 @@ export type Database = {
     }
     Enums: {
       order_fulfillment_type: "pickup" | "delivery"
-      order_payment_method: "cash" | "electronic"
-      order_payment_status: "unpaid" | "paid"
       order_status:
         | "pending"
         | "confirmed"
@@ -717,8 +731,6 @@ export const Constants = {
   public: {
     Enums: {
       order_fulfillment_type: ["pickup", "delivery"],
-      order_payment_method: ["cash", "electronic"],
-      order_payment_status: ["unpaid", "paid"],
       order_status: [
         "pending",
         "confirmed",

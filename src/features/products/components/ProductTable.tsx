@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui';
 import { formatCurrency } from '@/utils/format';
 import { PRODUCT_STATUS_META, PRODUCT_STATUS_FALLBACK } from '@/constants/app';
 import { cn } from '@/utils/cn';
-import type { ProductWithRelations } from '@/types/database.types';
+import type { ProductWithRelations } from '@/types/entities.types';
 
 interface ProductTableProps {
   products: ProductWithRelations[];

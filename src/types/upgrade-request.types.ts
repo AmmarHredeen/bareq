@@ -1,4 +1,4 @@
-import type { Profile } from '@/types/database.types';
+import type { Profile } from '@/types/entities.types';
 
 export type UpgradeRequestStatus = 'pending' | 'approved' | 'rejected';
 

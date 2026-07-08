@@ -1,10 +1,9 @@
 import { Eye } from 'lucide-react';
 import { OrderStatusBadge } from './OrderStatusBadge';
 import { formatCurrency, formatDate } from '@/utils/format';
-import {
-  ORDER_FULFILLMENT_META,
-} from '@/constants/app';
-import type { OrderWithRelations } from '@/types/database.types';
+import { ORDER_FULFILLMENT_META } from '@/constants/app';
+
+import type { OrderWithRelations } from '@/types/order.types';
 
 interface OrderTableProps {
   orders: OrderWithRelations[];
@@ -60,7 +59,7 @@ export function OrderTable({ orders, onView }: OrderTableProps) {
                     {formatCurrency(order.total)}
                   </span>
                 </td>
-
+               
                 <td className="px-4 py-3">
                   <OrderStatusBadge status={order.status} />
                 </td>

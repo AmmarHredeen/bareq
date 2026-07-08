@@ -20,30 +20,28 @@ import { OrderTable } from '@/features/orders/components/OrderTable';
 import { OrderFilters } from '@/features/orders/components/OrderFilters';
 import { OrderDetails } from '@/features/orders/components/OrderDetails';
 import { RejectCancelForm } from '@/features/orders/components/RejectCancelForm';
+import { DeliverForm } from '@/features/orders/components/DeliverForm';
 import type {
   OrderWithRelations,
   OrderStatus,
   OrderFulfillmentType,
-} from '@/types/database.types';
+} from '@/types/order.types';
 import { APP } from '@/constants/app';
-import { DeliverForm } from '@/features/orders/components/DeliverForm';
-
 
 export function OrdersPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<OrderStatus | ''>('');
- 
   const [fulfillmentType, setFulfillmentType] = useState<
     OrderFulfillmentType | ''
   >('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<OrderWithRelations | null>(null);
- 
-const deliverModal = useDisclosure();
 
-  const debouncedSearch = useDebounce(search, APP.SEARCH_DEBOUNCE_MS);
+  const deliverModal = useDisclosure();
   const detailsModal = useDisclosure();
   const reasonModal = useDisclosure();
+
+  const debouncedSearch = useDebounce(search, APP.SEARCH_DEBOUNCE_MS);
 
   const queryParams = useMemo(
     () => ({
@@ -64,10 +62,7 @@ const deliverModal = useDisclosure();
   const totalPages = Math.ceil(totalItems / APP.PAGE_SIZE);
 
   const resetPage = () => setPage(1);
-  const isBusy =
-    confirm.isPending ||
-    deliver.isPending ||
-    reject.isPending;
+  const isBusy = confirm.isPending || deliver.isPending || reject.isPending;
 
   const handleView = (order: OrderWithRelations) => {
     setSelected(order);
@@ -79,25 +74,23 @@ const deliverModal = useDisclosure();
     confirm.mutate(selected.id, { onSuccess: () => detailsModal.close() });
   };
 
- const handleDeliver = () => {
-  deliverModal.open();
-};
+  const handleDeliver = () => {
+    deliverModal.open();
+  };
 
-const handleDeliverSubmit = (fulfillmentType: OrderFulfillmentType) => {
-  if (!selected) return;
-  deliver.mutate(
-    { id: selected.id, fulfillmentType },
-    {
-      onSuccess: () => {
-        deliverModal.close();
-        detailsModal.close();
-      },
-    }
-  );
-};
+  const handleDeliverSubmit = (fulfillmentType: OrderFulfillmentType) => {
+    if (!selected) return;
+    deliver.mutate(
+      { id: selected.id, fulfillmentType },
+      {
+        onSuccess: () => {
+          deliverModal.close();
+          detailsModal.close();
+        },
+      }
+    );
+  };
 
-
-  // فتح نموذج السبب (رفض/إلغاء)
   const handleReject = () => {
     reasonModal.open();
   };
@@ -115,12 +108,7 @@ const handleDeliverSubmit = (fulfillmentType: OrderFulfillmentType) => {
     );
   };
 
-
-  const hasFilters = !!(
-    debouncedSearch ||
-    status ||
-    fulfillmentType
-  );
+  const hasFilters = !!(debouncedSearch || status || fulfillmentType);
 
   const clearFilters = () => {
     setSearch('');
@@ -186,7 +174,6 @@ const handleDeliverSubmit = (fulfillmentType: OrderFulfillmentType) => {
               setStatus(v);
               resetPage();
             }}
-            
             onFulfillmentChange={(v) => {
               setFulfillmentType(v);
               resetPage();
@@ -251,7 +238,6 @@ const handleDeliverSubmit = (fulfillmentType: OrderFulfillmentType) => {
         )}
       </Modal>
 
-      {/* مودال سبب الرفض/الإلغاء */}
       {/* مودال سبب الرفض */}
       <Modal
         isOpen={reasonModal.isOpen}
@@ -268,23 +254,21 @@ const handleDeliverSubmit = (fulfillmentType: OrderFulfillmentType) => {
       </Modal>
 
       {/* مودال اختيار طريقة التسليم */}
-<Modal
-  isOpen={deliverModal.isOpen}
-  onClose={deliverModal.close}
-  title="تسليم الطلب"
-  size="md"
->
-  {selected && (
-    <DeliverForm
-      defaultValue={selected.fulfillment_type}
-      onSubmit={handleDeliverSubmit}
-      onCancel={deliverModal.close}
-      isLoading={deliver.isPending}
-    />
-  )}
-</Modal>
-
-
+      <Modal
+        isOpen={deliverModal.isOpen}
+        onClose={deliverModal.close}
+        title="تسليم الطلب"
+        size="md"
+      >
+        {selected && (
+          <DeliverForm
+            defaultValue={selected.fulfillment_type}
+            onSubmit={handleDeliverSubmit}
+            onCancel={deliverModal.close}
+            isLoading={deliver.isPending}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

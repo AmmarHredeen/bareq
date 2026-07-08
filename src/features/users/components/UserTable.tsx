@@ -2,7 +2,7 @@ import { ShieldCheck, ShieldOff, Pencil, KeyRound, UserCog, Trash2 } from 'lucid
 import { Avatar, Badge, Button } from '@/components/ui';
 import { formatDate } from '@/utils/format';
 import { USER_ROLE_META } from '@/constants/app';
-import type { Profile } from '@/types/database.types';
+import type { Profile } from '@/types/entities.types';
 
 interface UserTableProps {
   users: Profile[];

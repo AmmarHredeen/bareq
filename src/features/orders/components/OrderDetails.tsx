@@ -4,7 +4,7 @@ import { OrderStatusBadge } from './OrderStatusBadge';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { ORDER_FULFILLMENT_META } from '@/constants/app';
 
-import type { OrderWithRelations } from '@/types/database.types';
+import type { OrderWithRelations } from '@/types/order.types';
 
 // ...
 interface OrderDetailsProps {

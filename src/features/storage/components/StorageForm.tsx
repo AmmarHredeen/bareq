@@ -8,7 +8,7 @@ import {
 import { Input, Button } from '@/components/ui';
 import { buildStorageLabel } from '@/utils/storage';
 import { cn } from '@/utils/cn';
-import type { StorageOption } from '@/types/database.types';
+import type { StorageOption } from '@/types/entities.types';
 
 interface StorageFormProps {
   initialData?: StorageOption | null;

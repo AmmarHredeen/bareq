@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { StorageOption } from '@/types/database.types';
+import type { StorageOption } from '@/types/entities.types';
 import type { PaginatedResult, QueryParams } from '@/types/common.types';
 import { buildStorageLabel } from '@/utils/storage';
 

@@ -1,7 +1,7 @@
 import { Pencil, Trash2, Award } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { formatDate } from '@/utils/format';
-import type { Brand } from '@/types/database.types';
+import type { Brand } from '@/types/entities.types';
 
 interface BrandTableProps {
   brands: Brand[];

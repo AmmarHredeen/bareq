@@ -3,7 +3,8 @@ import type {
   Product,
   ProductWithRelations,
   ProductStatus,
-} from '@/types/database.types';
+} from '@/types/entities.types';
+
 import type { PaginatedResult, QueryParams } from '@/types/common.types';
 
 const TABLE = 'products';

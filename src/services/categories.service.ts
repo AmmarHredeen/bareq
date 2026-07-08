@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Category } from '@/types/database.types';
+import type { Category } from '@/types/entities.types';
 import type { PaginatedResult, QueryParams } from '@/types/common.types';
 import { generateSlug } from '@/utils/slug';
 

@@ -9,7 +9,7 @@ import { useProductOptions } from '../hooks/useProductOptions';
 import { Input, Textarea, Select, Button, Spinner } from '@/components/ui';
 import { PRODUCT_STATUS_OPTIONS } from '@/constants/app';
 import { cn } from '@/utils/cn';
-import type { Product } from '@/types/database.types';
+import type { Product } from '@/types/entities.types';
 
 interface ProductFormProps {
   initialData?: Product | null;

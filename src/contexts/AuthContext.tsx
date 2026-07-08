@@ -7,7 +7,7 @@ import {
 } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import type { Profile } from '@/types/database.types';
+import type { Profile } from '@/types/entities.types';
 
 interface AuthContextValue {
   user: User | null;

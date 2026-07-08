@@ -1,7 +1,7 @@
 import { Pencil, Trash2, MemoryStick, HardDrive } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import { formatStorageSize } from '@/utils/storage';
-import type { StorageOption } from '@/types/database.types';
+import type { StorageOption } from '@/types/entities.types';
 
 interface StorageTableProps {
   options: StorageOption[];

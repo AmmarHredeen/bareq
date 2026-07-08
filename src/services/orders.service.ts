@@ -4,7 +4,8 @@ import type {
   OrderWithRelations,
   OrderStatus,
   OrderFulfillmentType,
-} from '@/types/database.types';
+} from '@/types/order.types';
+
 import type { PaginatedResult, QueryParams } from '@/types/common.types';
 
 const TABLE = 'orders';
