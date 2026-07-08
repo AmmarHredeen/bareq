@@ -1,0 +1,323 @@
+@import 'tailwindcss';
+
+/* تفعيل الوضع الليلي عبر كلاس على عنصر html */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* الخط الأساسي */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ظلال ناعمة متدرّجة لطابع SaaS */
+  --shadow-soft: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06);
+  --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.05), 0 4px 12px -2px rgb(15 23 42 / 0.06);
+  --shadow-elevated: 0 4px 16px -4px rgb(15 23 42 / 0.10), 0 8px 28px -6px rgb(15 23 42 / 0.10);
+  --shadow-popover: 0 8px 24px -6px rgb(15 23 42 / 0.12), 0 16px 40px -8px rgb(15 23 42 / 0.14);
+
+  /* حركات موحّدة */
+  --ease-out-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* أنيميشن */
+  --animate-fade-in: fade-in 0.2s var(--ease-out-smooth);
+  --animate-slide-up: slide-up 0.25s var(--ease-out-smooth);
+  --animate-scale-in: scale-in 0.15s var(--ease-out-smooth);
+  --animate-shimmer: shimmer 1.6s infinite linear;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-slate-200 dark:border-slate-800;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+    font-feature-settings: 'cv11', 'ss01';
+    text-rendering: optimizeLegibility;
+  }
+
+  /* تحسين حالة التركيز الافتراضية للوصولية */
+  :focus-visible {
+    @apply outline-none;
+  }
+
+  /* شريط تمرير أنيق */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-slate-300/70 dark:bg-slate-700;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-slate-600;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(203 213 225) transparent;
+  }
+
+  .dark * {
+    scrollbar-color: rgb(51 65 85) transparent;
+  }
+}
+
+@layer utilities {
+
+  /* فئات أنيميشن جاهزة للاستخدام */
+  .animate-fade-in {
+    animation: var(--animate-fade-in);
+  }
+
+  .animate-slide-up {
+    animation: var(--animate-slide-up);
+  }
+
+  .animate-scale-in {
+    animation: var(--animate-scale-in);
+  }
+
+  /* خلفية shimmer للـ skeleton */
+  .shimmer {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgb(255 255 255 / 0.6) 50%,
+        transparent 100%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  .dark .shimmer {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgb(255 255 255 / 0.05) 50%,
+        transparent 100%);
+    background-size: 200% 100%;
+  }
+
+  /* حاوية محتوى الصفحة الموحّدة */
+  .page-container {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* احترام تفضيل تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== Print styles للنشرة ===== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #newsletter-print-area,
+  #newsletter-print-area * {
+    visibility: visible;
+  }
+
+  #newsletter-print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  #newsletter-print-area table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  #newsletter-print-area th,
+  #newsletter-print-area td {
+    border: 1px solid #ccc;
+    padding: 6px 8px;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  #newsletter-print-area thead {
+    display: table-header-group;
+  }
+
+  #newsletter-print-area tr {
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+}
+
+/* إخفاء ترويسة الطباعة على الشاشة */
+.print-only {
+  display: none;
+}
+
+/* ===== خطوط عربية للبوستر (اختياري لكن مُوصى به) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
+/* ===== طباعة النشرة ===== */
+@media print {
+
+  /* إخفاء كل شيء ما عدا منطقة البوستر */
+  body * {
+    visibility: hidden;
+  }
+
+  #poster-print-area,
+  #poster-print-area * {
+    visibility: visible;
+  }
+
+  #poster-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .poster-canvas {
+    box-shadow: none !important;
+    margin: 0 auto !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+  .print-page-break:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /* ألوان دقيقة في الطباعة */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
+
+/* ===== خط عربي للبوستر ===== */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
+/* ===== طباعة النشرة ===== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #poster-print-area,
+  #poster-print-area * {
+    visibility: visible;
+  }
+  #poster-print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  .poster-canvas {
+    box-shadow: none !important;
+    margin: 0 auto !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
