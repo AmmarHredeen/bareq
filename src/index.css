@@ -3,6 +3,9 @@
 /* ===== خطوط عربية للبوستر (اختياري لكن مُوصى به) ===== */
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
 
+/* ===== خط عربي للبوستر ===== */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
 
 /* تفعيل الوضع الليلي عبر كلاس على عنصر html */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -287,9 +290,6 @@
     margin: 0;
   }
 }
-
-/* ===== خط عربي للبوستر ===== */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
 
 /* ===== طباعة النشرة ===== */
 @media print {

@@ -4,6 +4,7 @@ import { NAV_ITEMS } from '@/constants/navigation';
 import { ROUTES } from '@/constants/routes';
 import { usePendingOrdersCount } from '@/features/orders/hooks/useOrders';
 import { cn } from '@/utils/cn';
+import { usePendingUpgradeRequestsCount } from '@/features/users/hooks/useUpgradeRequests';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { data: pendingCount = 0 } = usePendingOrdersCount();
+const { data: pendingUpgradeCount = 0 } = usePendingUpgradeRequestsCount();
 
   return (
     <>
@@ -60,10 +62,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* عناصر التنقل */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {NAV_ITEMS.map((item) => {
+              {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isOrders = item.path === ROUTES.ORDERS;
-            const showDot = isOrders && pendingCount > 0;
+            const isUsers = item.path === ROUTES.USERS;
+
+            // تحديد العدد المناسب لكل قسم
+            const badgeCount = isOrders
+              ? pendingCount
+              : isUsers
+                ? pendingUpgradeCount
+                : 0;
+            const showBadge = badgeCount > 0;
 
             return (
               <NavLink
@@ -83,16 +93,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <Icon className="h-5 w-5 shrink-0" />
                 {item.label}
 
-                {/* نقطة نابضة بجانب "الطلبات" عند وجود طلبات قيد الانتظار */}
-                {showDot && (
+                {/* عدّاد بجانب "الطلبات" و "المستخدمون" */}
+                {showBadge && (
                   <span className="ms-auto inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white">
-                    {pendingCount > 99 ? '99+' : pendingCount}
+                    {badgeCount > 99 ? '99+' : badgeCount}
                   </span>
                 )}
-
               </NavLink>
             );
           })}
+
         </nav>
 
         {/* تذييل */}

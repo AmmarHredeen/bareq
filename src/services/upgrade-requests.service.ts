@@ -90,4 +90,14 @@ export const upgradeRequestsService = {
 
     if (error) throw error;
   },
+
+
+  async countPending(): Promise<number> {
+    const { count, error } = await tb()
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    if (error) throw error;
+    return count ?? 0;
+  },
+
 };

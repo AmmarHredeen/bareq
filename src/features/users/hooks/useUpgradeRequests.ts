@@ -74,4 +74,14 @@ export function useUpgradeRequestMutations() {
   });
 
   return { approve, reject };
+  
+}
+
+
+export function usePendingUpgradeRequestsCount() {
+  return useQuery({
+    queryKey: [...upgradeRequestsKeys.all, 'pending-count'],
+    queryFn: () => upgradeRequestsService.countPending(),
+    refetchOnWindowFocus: true,
+  });
 }
