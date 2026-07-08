@@ -173,7 +173,7 @@ export function UsersPage() {
 
       {/* التبويب */}
       <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800/60">
-        <button
+                <button
           type="button"
           onClick={() => setTab('users')}
           className={`relative flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
@@ -183,12 +183,8 @@ export function UsersPage() {
           }`}
         >
           المستخدمون
-          {pendingCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
-              {pendingCount}
-            </span>
-          )}
         </button>
+
         <button
           type="button"
           onClick={() => setTab('upgrade-requests')}
