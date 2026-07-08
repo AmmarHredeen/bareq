@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* ===== خطوط عربية للبوستر (اختياري لكن مُوصى به) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+
+
 /* تفعيل الوضع الليلي عبر كلاس على عنصر html */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -230,8 +234,6 @@
   display: none;
 }
 
-/* ===== خطوط عربية للبوستر (اختياري لكن مُوصى به) ===== */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
 
 /* ===== طباعة النشرة ===== */
 @media print {
@@ -268,6 +270,7 @@
     page-break-after: always;
     break-after: page;
   }
+
   .print-page-break:last-child {
     page-break-after: auto;
     break-after: auto;
@@ -293,10 +296,12 @@
   body * {
     visibility: hidden;
   }
+
   #poster-print-area,
   #poster-print-area * {
     visibility: visible;
   }
+
   #poster-print-area {
     position: absolute;
     top: 0;
@@ -305,17 +310,21 @@
     padding: 0 !important;
     background: #fff !important;
   }
+
   .poster-canvas {
     box-shadow: none !important;
     margin: 0 auto !important;
   }
+
   .no-print {
     display: none !important;
   }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+
   @page {
     size: A4;
     margin: 0;
