@@ -2,26 +2,26 @@ import { supabase } from '@/lib/supabase';
 import type { UpgradeRequest } from '@/types/upgrade-request.types';
 import type { Profile } from '@/types/database.types';
 
-const TABLE = 'upgrade_requests';
+// جدول upgrade_requests ليس في الأنواع المولّدة
+const tb = () => (supabase as any).from('upgrade_requests');
 
 export const upgradeRequestsService = {
   async getAll(): Promise<UpgradeRequest[]> {
-    const { data, error } = await supabase
-      .from(TABLE)
+    const { data, error } = await tb()
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    const requests = data ?? [];
+    const requests: any[] = data ?? [];
 
     const userIds = [
-      ...new Set(requests.map((r) => r.user_id).filter(Boolean)),
+      ...new Set(requests.map((r: any) => r.user_id).filter(Boolean)),
     ];
     const reviewerIds = [
-      ...new Set(requests.map((r) => r.reviewed_by).filter(Boolean)),
+      ...new Set(requests.map((r: any) => r.reviewed_by).filter(Boolean)),
     ];
-    const allIds = [...new Set([...userIds, ...reviewerIds])];
+    const allIds: string[] = [...new Set([...userIds, ...reviewerIds])];
 
     if (allIds.length === 0) return requests as unknown as UpgradeRequest[];
 
@@ -36,7 +36,7 @@ export const upgradeRequestsService = {
       (profiles ?? []).map((p) => [p.id, p])
     );
 
-    return requests.map((r) => ({
+    return requests.map((r: any) => ({
       ...r,
       user: profileMap.get(r.user_id) ?? null,
       reviewer: r.reviewed_by ? (profileMap.get(r.reviewed_by) ?? null) : null,
@@ -47,24 +47,23 @@ export const upgradeRequestsService = {
     id: string,
     reviewedBy: string
   ): Promise<void> {
-    const { data: request, error: fetchError } = await supabase
-      .from(TABLE)
+    const { data: request, error: fetchError } = await tb()
       .select('*')
       .eq('id', id)
       .single();
 
     if (fetchError) throw fetchError;
-    if (request.status !== 'pending') throw new Error('الطلب ليس في حالة انتظار');
+    const req = request as any;
+    if (req.status !== 'pending') throw new Error('الطلب ليس في حالة انتظار');
 
     const { error: updateRoleError } = await supabase
       .from('profiles')
-      .update({ role: 'wholesaler' })
-      .eq('id', request.user_id);
+      .update({ role: 'wholesaler' as any })
+      .eq('id', req.user_id);
 
     if (updateRoleError) throw updateRoleError;
 
-    const { error: updateError } = await supabase
-      .from(TABLE)
+    const { error: updateError } = await tb()
       .update({
         status: 'approved',
         reviewed_by: reviewedBy,
@@ -80,8 +79,7 @@ export const upgradeRequestsService = {
     reviewedBy: string,
     reason: string
   ): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE)
+    const { error } = await tb()
       .update({
         status: 'rejected',
         reviewed_by: reviewedBy,

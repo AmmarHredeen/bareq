@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { X, Smartphone } from 'lucide-react';
+import { X } from 'lucide-react';
 import { NAV_ITEMS } from '@/constants/navigation';
 import { ROUTES } from '@/constants/routes';
 import { usePendingOrdersCount } from '@/features/orders/hooks/useOrders';

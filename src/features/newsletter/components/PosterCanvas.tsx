@@ -5,6 +5,7 @@ import {
   toEnglishDigits,
   categorySortKey,
   type PosterBrandGroup,
+  type PosterLine,
   type PosterSettings,
   type PosterFormat,
 } from '@/features/newsletter/lib/poster';
