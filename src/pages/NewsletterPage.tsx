@@ -36,7 +36,7 @@ export default function NewsletterPage() {
     if (!posterRef.current) return;
     setExporting(true);
     try {
-      await exportPosterAsPdf(posterRef.current, buildFileName('story', 'pdf'));
+      await exportPosterAsPdf(posterRef.current, buildFileName('poster', 'pdf'));
       toast.success('تم تصدير PDF بنجاح');
     } catch (err) {
       console.error(err);
@@ -50,7 +50,7 @@ export default function NewsletterPage() {
     if (!posterRef.current) return;
     setExporting(true);
     try {
-      await exportPosterAsPng(posterRef.current, buildFileName('story'));
+      await exportPosterAsPng(posterRef.current, buildFileName('poster'));
       toast.success('تم تصدير الصورة بنجاح');
     } catch (err) {
       console.error(err);
@@ -89,7 +89,7 @@ export default function NewsletterPage() {
       />
 
       {isLoading ? (
-        <Skeleton className="mx-auto h-[1123px] w-[794px] max-w-full" />
+        <Skeleton className="mx-auto h-[900px] w-[1240px] max-w-full" />
       ) : groups.length === 0 ? (
         <EmptyState
           icon={Package}
@@ -105,7 +105,6 @@ export default function NewsletterPage() {
             ref={posterRef}
             groups={groups}
             settings={settings}
-            format="story"
             allBrands={brands}
           />
         </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   DEFAULT_POSTER_SETTINGS,
   DEFAULT_CONTACT,
+  DEFAULT_FONTS,
   type PosterSettings,
 } from '@/features/newsletter/lib/poster';
 
@@ -20,6 +21,8 @@ function loadSettings(): PosterSettings {
       invoiceDate: new Date().toISOString().slice(0, 10),
       // دمج بيانات التواصل لضمان عدم فقد أي حقل جديد
       contact: { ...DEFAULT_CONTACT, ...(parsed.contact ?? {}) },
+      // دمج أحجام الخطوط لضمان اكتمال أي حقل جديد
+      fonts: { ...DEFAULT_FONTS, ...(parsed.fonts ?? {}) },
     };
   } catch {
     return DEFAULT_POSTER_SETTINGS;

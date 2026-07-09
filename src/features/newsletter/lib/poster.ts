@@ -1,7 +1,7 @@
 import type { NewsletterProduct } from '@/services/newsletter.service';
 
 export type PosterMode = 'retail' | 'wholesale';
-export type PosterFormat = 'a4' | 'square' | 'story';
+export type PosterFormat = 'a4' | 'square' | 'story' | 'poster6';
 
 /** كفالة قابلة للتحكم: اسم + مدة + الماركات المستفيدة (فارغ = كل الماركات). */
 export interface WarrantyItem {
@@ -20,13 +20,28 @@ export interface AgentItem {
 
 /** بيانات التواصل والفوتر — كلها قابلة للتحكم. */
 export interface ContactInfo {
-  slogan: string; // ضمان يريح بالك
-  phones: string; // أرقام مفصولة بفاصلة
-  complaints: string; // رقم الشكاوى
-  tel: string; // Tel
-  address: string; // الموقع
-  deliveryNote: string; // توصيل مجاني ضمن دمشق
-  paymentNote: string; // نقبل الدفع كاش - شام كاش
+  slogan: string;
+  phones: string;
+  complaints: string;
+  tel: string;
+  address: string;
+  deliveryNote: string;
+  paymentNote: string;
+  wholesaleDiscount: string; // حسم على فواتير الجملة
+}
+
+/** أحجام الخطوط (px) — قابلة للتحكم بالكامل عبر المنزلقات. */
+export interface FontSizes {
+  brandTitle: number;   // عنوان الماركة
+  categoryLabel: number; // سطر "كفالة كسر شاشة" / اسم الفئة الصغير
+  productName: number;  // اسم المنتج
+  productStorage: number; // الذاكرة
+  price: number;        // السعر
+  warranty: number;     // نص الكفالات في الهيدر
+  brandName: number;    // اسم BAREQ Tel
+  slogan: number;       // الشعار
+  footer: number;       // نص الفوتر
+  agents: number;       // نص الوكلاء
 }
 
 export interface PosterSettings {
@@ -36,6 +51,7 @@ export interface PosterSettings {
   warranties: WarrantyItem[];
   agents: AgentItem[];
   contact: ContactInfo;
+  fonts: FontSizes;
 }
 
 /** مولّد معرّفات بسيط. */
@@ -65,8 +81,22 @@ export const DEFAULT_CONTACT: ContactInfo = {
   complaints: '0965677710',
   tel: '4807',
   address: 'جانب برج دمشق مقابل جسر فكتوريا طابق أول',
-  deliveryNote: '🚚 توصيل مجاني ضمن دمشق',
-  paymentNote: '💳 نقبل الدفع كاش - شام كاش',
+  deliveryNote: 'توصيل مجاني ضمن دمشق',
+  paymentNote: 'نقبل الدفع عن طريق شام كاش',
+  wholesaleDiscount: 'حسم على فواتير الجملة',
+};
+
+export const DEFAULT_FONTS: FontSizes = {
+  brandTitle: 13,
+  categoryLabel: 9,
+  productName: 11,
+  productStorage: 10,
+  price: 11,
+  warranty: 15,
+  brandName: 30,
+  slogan: 16,
+  footer: 11,
+  agents: 10,
 };
 
 export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
@@ -80,6 +110,7 @@ export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
   ],
   agents: [],
   contact: DEFAULT_CONTACT,
+  fonts: DEFAULT_FONTS,
 };
 
 export interface PosterLine {
@@ -121,13 +152,12 @@ function rawPrice(p: NewsletterProduct, mode: PosterMode): number | null {
   return mode === 'wholesale' ? p.wholesale_price : p.price;
 }
 
-/** تنسيق السعر بالدولار فقط، بأرقام إنجليزية. */
+/** تنسيق السعر بأرقام إنجليزية بدون رمز (مثل الصورة). */
 export function formatPosterPrice(price: number | null): string {
   if (price == null) return '—';
-  const num = new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2,
   }).format(price);
-  return `${num}$`;
 }
 
 export function buildPoster(
@@ -167,7 +197,8 @@ export function buildPoster(
   const result = [...groups.values()];
   for (const g of result) {
     g.lines.sort((a, b) => {
-      const catDiff = categorySortKey(a.categoryName) - categorySortKey(b.categoryName);
+      const catDiff =
+        categorySortKey(a.categoryName) - categorySortKey(b.categoryName);
       if (catDiff !== 0) return catDiff;
       return (a.price ?? Infinity) - (b.price ?? Infinity);
     });
@@ -176,38 +207,10 @@ export function buildPoster(
   return result;
 }
 
-const MAX_LINES_PER_PAGE: Record<PosterFormat, number> = {
-  a4: 24,
-  square: 16,
-  story: Infinity,
-};
-
-export function paginateGroups(
-  groups: PosterBrandGroup[],
-  format: PosterFormat
-): PosterBrandGroup[][] {
-  const maxLines = MAX_LINES_PER_PAGE[format];
-  if (!isFinite(maxLines)) return [groups];
-
-  const pages: PosterBrandGroup[][] = [];
-  let currentPage: PosterBrandGroup[] = [];
-  let currentLines = 0;
-
-  for (const group of groups) {
-    const groupLines = group.lines.length + 1;
-    if (currentLines + groupLines > maxLines && currentPage.length > 0) {
-      pages.push(currentPage);
-      currentPage = [];
-      currentLines = 0;
-    }
-    currentPage.push(group);
-    currentLines += groupLines;
-  }
-  if (currentPage.length > 0) pages.push(currentPage);
-  if (pages.length === 0) pages.push([]);
-  return pages;
-}
-
+/**
+ * توزيع الماركات على أعمدة بحيث تُملأ عموداً عموداً (يمين → يسار في RTL)
+ * لتشبه ترتيب الصورة، مع موازنة الأحمال.
+ */
 export function distributeIntoColumns(
   groups: PosterBrandGroup[],
   columnCount: number
@@ -224,7 +227,7 @@ export function distributeIntoColumns(
       if (loads[i] < loads[min]) min = i;
     }
     columns[min].push(g);
-    loads[min] += g.lines.length + 1.5;
+    loads[min] += g.lines.length + 2; // +2 للعنوان وسطر الكفالة
   }
   return columns;
 }
