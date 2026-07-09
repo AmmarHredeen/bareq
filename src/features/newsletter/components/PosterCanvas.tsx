@@ -1,8 +1,11 @@
-import { forwardRef } from 'react';
+import { forwardRef, useMemo } from 'react';
 import {
   distributeIntoColumns,
+  computeColumnCount,
+  warrantiesForBrand,
   formatPosterPrice,
   toEnglishDigits,
+  resolveGradients,
   categorySortKey,
   type PosterBrandGroup,
   type PosterLine,
@@ -16,177 +19,374 @@ interface PosterCanvasProps {
   allBrands: NewsletterFilterOption[];
 }
 
-const POSTER_WIDTH = 1240; // عرض ثابت، الارتفاع مرن
-const COLUMNS = 6;
-
-const HEADER_GRADIENT =
-  'linear-gradient(135deg, #0284c7 0%, #1d4ed8 50%, #1e3a8a 100%)';
+const POSTER_WIDTH = 1240;
+const PADDING = 24;
+const COL_GAP = 12;
 
 export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
   function PosterCanvas({ groups, settings, allBrands }, ref) {
-    const { fonts } = settings;
-    const columns = distributeIntoColumns(groups, COLUMNS);
+    const { contact, productFonts, theme } = settings;
+    const gradients = resolveGradients(theme);
 
-    const brandName = (id: string) =>
-      allBrands.find((b) => b.id === id)?.name ?? '';
+    const innerWidth = POSTER_WIDTH - PADDING * 2;
+
+    const columnCount = useMemo(() => {
+      if (!settings.columns.auto) {
+        return Math.min(settings.columns.manual, Math.max(1, groups.length));
+      }
+      return computeColumnCount(groups, productFonts, innerWidth, COL_GAP);
+    }, [groups, productFonts, settings.columns, innerWidth]);
+
+    const columns = useMemo(
+      () => distributeIntoColumns(groups, columnCount),
+      [groups, columnCount]
+    );
 
     const today = new Date().toISOString().slice(0, 10);
 
-    const phones = settings.contact.phones
+    const phones = contact.phones.text
       .split(',')
       .map((p) => toEnglishDigits(p.trim()))
       .filter(Boolean);
 
-    const warrantyBrandsText = (brandIds: string[]) => {
-      if (!brandIds.length)
-        return allBrands.map((b) => b.name).filter(Boolean).join('، ');
-      return brandIds.map(brandName).filter(Boolean).join('، ');
-    };
-
     return (
       <div
         ref={ref}
-        className="poster-canvas mx-auto bg-slate-50 text-slate-900"
+        className="poster-canvas mx-auto"
         dir="rtl"
         style={{
           width: POSTER_WIDTH,
           fontFamily: '"Cairo", "Tajawal", system-ui, sans-serif',
+          background:
+            'radial-gradient(1200px 600px at 80% -10%, #dbeafe 0%, transparent 60%), linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)',
+          color: '#0f172a',
         }}
       >
-        <div className="flex flex-col p-5">
+        <div className="flex flex-col" style={{ padding: PADDING }}>
           {/* ===== الترويسة ===== */}
           <header
-            className="relative overflow-hidden px-5 pb-3 pt-3 text-white"
-            style={{ background: HEADER_GRADIENT, borderRadius: 14 }}
+            className="relative overflow-hidden text-white"
+            style={{
+              background: `linear-gradient(135deg, ${theme.headerFrom} 0%, ${theme.headerVia} 45%, ${theme.headerTo} 100%)`,
+              borderRadius: 20,
+              boxShadow: '0 18px 40px -12px rgba(29,78,216,0.55)',
+            }}
           >
-            <div className="flex items-center justify-between">
-              {/* الشعار يمين */}
-              <div
-                className="rounded-xl bg-white/15 px-4 py-2 text-center font-bold leading-tight backdrop-blur"
-                style={{ fontSize: fonts.slogan }}
-              >
-                {settings.contact.slogan
-                  .split(' ')
-                  .map((w, i) => (
-                    <div key={i}>{w}</div>
-                  ))}
-              </div>
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'radial-gradient(600px 200px at 20% 0%, rgba(255,255,255,0.22), transparent 70%)',
+                pointerEvents: 'none',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: -40,
+                left: -40,
+                width: 180,
+                height: 180,
+                borderRadius: '50%',
+                background: 'rgba(56,189,248,0.25)',
+                filter: 'blur(6px)',
+              }}
+            />
 
-              {/* الاسم والوسط */}
-              <div className="flex items-center gap-3">
-                <div className="text-center">
-                  <div
-                    className="font-extrabold tracking-tight"
-                    style={{ fontSize: fonts.brandName }}
-                  >
-                    BAREQ Tel
-                  </div>
-                  <div
-                    className="font-bold"
-                    style={{ fontSize: fonts.brandName * 0.5 }}
-                  >
-                    بريق تيل
-                  </div>
+            {/* ضمان يريح بالك — ربع دائرة ملتصقة بالزاوية العلوية اليمنى للترويسة */}
+            <div
+              className="absolute top-0 flex items-center justify-center text-center font-black"
+              style={{
+                right: 0,
+                fontSize: contact.slogan.fontSize,
+                fontFamily: contact.slogan.fontFamily,
+                minWidth: contact.slogan.fontSize * 5.5,
+                maxWidth: contact.slogan.fontSize * 8,
+                lineHeight: 1.35,
+                padding: `${contact.slogan.fontSize * 0.7}px ${
+                  contact.slogan.fontSize * 0.9
+                }px`,
+                backgroundColor: theme.sloganFrom,
+                border: '1px solid rgba(255,255,255,0.25)',
+                color: '#ffffff',
+                borderTopRightRadius: 20,
+                borderTopLeftRadius: 0,
+                borderBottomLeftRadius: contact.slogan.fontSize * 2.6,
+                borderBottomRightRadius: 0,
+                zIndex: 2,
+              }}
+            >
+              <span className="relative">{contact.slogan.text}</span>
+            </div>
+
+            <div className="relative flex items-center justify-between px-6 py-4">
+              {/* مساحة فارغة يمين لتعويض الشعار المطلق */}
+              <div
+                style={{
+                  minWidth: contact.slogan.fontSize * 5.5,
+                  flexShrink: 0,
+                }}
+              />
+
+              {/* شعار الشركة (bareq.png) بدل نص BAREQ Tel — في الوسط */}
+              <div className="flex flex-col items-center text-center">
+                <img
+                  src="/bareq.png"
+                  alt="BAREQ Tel"
+                  className="object-contain"
+                  style={{
+                    height: settings.logoSize,
+                    width: 'auto',
+                    maxWidth: settings.logoSize * 4,
+                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.35))',
+                  }}
+                />
+                <div
+                  className="mt-1 font-bold opacity-90"
+                  style={{
+                    fontSize: contact.brandNameAr.fontSize,
+                    fontFamily: contact.brandNameAr.fontFamily,
+                  }}
+                >
+                  {contact.brandNameAr.text}
                 </div>
               </div>
 
-              {/* اللوغو يسار */}
-              <img
-                src="/logo.jpeg"
-                alt="Bareq"
-                className="rounded-full object-cover ring-2 ring-white/40 shadow-lg"
-                style={{ height: fonts.brandName * 2, width: fonts.brandName * 2 }}
-              />
+              {/* التاريخ + لوجو الزاوية يسار */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="text-center font-bold"
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    border: '1px solid rgba(255,255,255,0.25)',
+                    borderRadius: 12,
+                    padding: '6px 12px',
+                    backdropFilter: 'blur(4px)',
+                    fontFamily: contact.date.fontFamily,
+                  }}
+                >
+                  <div
+                    className="opacity-80"
+                    style={{ fontSize: contact.date.fontSize * 0.5 }}
+                  >
+                    التاريخ
+                  </div>
+                  <div
+                    className="tabular-nums"
+                    style={{ fontSize: contact.date.fontSize }}
+                  >
+                    {toEnglishDigits(today)}
+                  </div>
+                </div>
+
+                <img
+                  src="/logo.jpeg"
+                  alt="Logo"
+                  className="object-contain"
+                  style={{
+                    height: settings.cornerLogoSize,
+                    width: 'auto',
+                    maxWidth: settings.cornerLogoSize * 4,
+                    borderRadius: settings.cornerLogoSize * 0.22,
+                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.35))',
+                  }}
+                />
+              </div>
             </div>
 
-            {/* شريط الكفالات الكبير */}
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            {/* شريط الكفالات */}
+            <div className="relative flex flex-wrap items-center justify-center gap-2.5 px-6 pb-4">
               {settings.warranties
                 .filter((w) => w.name.trim())
                 .map((w) => (
                   <div
                     key={w.id}
-                    className="rounded-lg bg-white/15 px-4 py-1.5 text-center font-bold backdrop-blur"
-                    style={{ fontSize: fonts.warranty }}
+                    className="text-center font-bold"
+                    style={{
+                      fontSize: w.fontSize,
+                      fontFamily: w.fontFamily,
+                      backgroundColor: 'rgba(255,255,255,0.14)',
+                      border: '1px solid rgba(250,204,21,0.55)',
+                      borderRadius: 12,
+                      padding: '8px 18px',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+                    }}
                   >
-                    {w.name}
+                    <span style={{ color: '#fde68a' }}>{w.name}</span>
                     {w.duration ? ` ( ${toEnglishDigits(w.duration)} )` : ''}
-                    {w.brandIds.length > 0 && (
-                      <span
-                        className="ms-1 font-normal opacity-80"
-                        style={{ fontSize: fonts.warranty * 0.7 }}
-                      >
-                        — {warrantyBrandsText(w.brandIds)}
-                      </span>
-                    )}
                   </div>
                 ))}
             </div>
           </header>
 
-          {/* ===== الأعمدة الستة ===== */}
-          <main className="mt-4 flex gap-2">
+          {/* ===== الأعمدة ===== */}
+          <main className="mt-5 flex" style={{ gap: COL_GAP }}>
             {columns.map((col, ci) => (
-              <div key={ci} className="flex flex-1 flex-col gap-2">
+              <div
+                key={ci}
+                className="flex flex-1 flex-col"
+                style={{ gap: COL_GAP }}
+              >
                 {col.map((group) => (
-                  <BrandBlock key={group.brandId} group={group} fonts={fonts} />
+                  <BrandBlock
+                    key={group.brandId}
+                    group={group}
+                    settings={settings}
+                    brandGradient={gradients.brand}
+                  />
                 ))}
               </div>
             ))}
           </main>
 
-          {/* ===== التاريخ + حسم الجملة ===== */}
-          <div className="mt-4 flex items-center justify-center gap-6">
-            <span
-              className="font-extrabold text-orange-500 tabular-nums"
-              style={{ fontSize: fonts.warranty + 4 }}
-            >
-              {toEnglishDigits(today)}
-            </span>
-            {settings.contact.wholesaleDiscount && (
-              <span
-                className="rounded-lg px-5 py-2 font-bold text-white"
-                style={{ background: '#1e3a8a', fontSize: fonts.warranty }}
+          {/* ===== حسم الجملة — البوكس كله يتناسب مع حجم الخط ===== */}
+          {contact.wholesaleDiscount.text && (
+            <div className="mt-6 flex items-center justify-center px-2">
+              <div
+                className="relative flex items-center justify-center"
+                style={{
+                  backgroundColor: gradients.discount.from,
+                  borderRadius: contact.wholesaleDiscount.fontSize * 0.75,
+                  padding: `${contact.wholesaleDiscount.fontSize * 0.75}px ${
+                    contact.wholesaleDiscount.fontSize * 1.4
+                  }px`,
+                  boxShadow: '0 12px 26px -10px rgba(0,0,0,0.45)',
+                  border: `${Math.max(
+                    2,
+                    contact.wholesaleDiscount.fontSize * 0.09
+                  )}px solid ${gradients.discount.to}`,
+                }}
               >
-                {settings.contact.wholesaleDiscount}
-              </span>
-            )}
-          </div>
+                <div
+                  className="flex items-center"
+                  style={{ gap: contact.wholesaleDiscount.fontSize * 0.55 }}
+                >
+                  {/* شارة % دائرية صلبة */}
+                  <div
+                    className="flex shrink-0 items-center justify-center font-black"
+                    style={{
+                      width: contact.wholesaleDiscount.fontSize * 2.4,
+                      height: contact.wholesaleDiscount.fontSize * 2.4,
+                      borderRadius: '50%',
+                      backgroundColor: '#f59e0b',
+                      color: '#7c2d12',
+                      fontSize: contact.wholesaleDiscount.fontSize * 1.3,
+                      border: `${Math.max(
+                        2,
+                        contact.wholesaleDiscount.fontSize * 0.09
+                      )}px solid #fde68a`,
+                      lineHeight: 1,
+                    }}
+                  >
+                    %
+                  </div>
+
+                  {/* النص */}
+                  <span
+                    className="whitespace-nowrap font-black"
+                    style={{
+                      fontSize: contact.wholesaleDiscount.fontSize,
+                      fontFamily: contact.wholesaleDiscount.fontFamily,
+                      color: '#ffffff',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {contact.wholesaleDiscount.text}
+                  </span>
+
+                  {/* نجمة تسويقية */}
+                  <div
+                    className="flex shrink-0 items-center justify-center font-black"
+                    style={{
+                      fontSize: contact.wholesaleDiscount.fontSize * 1.1,
+                      color: '#fde68a',
+                      lineHeight: 1,
+                    }}
+                  >
+                    ✦
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ===== الفوتر ===== */}
           <footer
-            className="mt-4 rounded-xl px-5 py-3 text-white"
-            style={{ background: '#1e3a8a' }}
+            className="mt-5 text-white"
+            style={{
+              background: `linear-gradient(135deg, ${theme.footerFrom} 0%, ${theme.footerTo} 100%)`,
+              borderRadius: 18,
+              padding: '18px 24px',
+              boxShadow: '0 16px 32px -14px rgba(30,58,138,0.55)',
+            }}
           >
-            <div
-              className="flex flex-wrap items-start justify-between gap-4"
-              style={{ fontSize: fonts.footer }}
-            >
+            <div className="flex flex-wrap items-start justify-between gap-5">
               {/* الأرقام يمين */}
-              <div className="space-y-0.5 font-bold tabular-nums">
+              <div className="space-y-1">
                 {phones.map((p) => (
-                  <div key={p}>{p}</div>
+                  <div
+                    key={p}
+                    className="font-bold tabular-nums"
+                    style={{
+                      fontSize: contact.phones.fontSize,
+                      fontFamily: contact.phones.fontFamily,
+                    }}
+                  >
+                    📞 {p}
+                  </div>
                 ))}
               </div>
 
               {/* الوسط: ملاحظات */}
-              <div className="space-y-1 text-center font-semibold">
-                {settings.contact.paymentNote && (
-                  <div>{settings.contact.paymentNote}</div>
-                )}
-                {settings.contact.deliveryNote && (
-                  <div>{settings.contact.deliveryNote}</div>
-                )}
-                {settings.contact.address && (
-                  <div className="opacity-90" style={{ fontSize: fonts.footer * 0.9 }}>
-                    {settings.contact.address}
+              <div className="space-y-1.5 text-center font-semibold">
+                {contact.paymentNote.text && (
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.12)',
+                      borderRadius: 10,
+                      padding: '4px 12px',
+                      fontSize: contact.paymentNote.fontSize,
+                      fontFamily: contact.paymentNote.fontFamily,
+                    }}
+                  >
+                    💳 {contact.paymentNote.text}
                   </div>
                 )}
-                {settings.contact.complaints && (
-                  <div style={{ fontSize: fonts.footer * 0.9 }}>
-                    للشكاوى والملاحظات: {toEnglishDigits(settings.contact.complaints)}
-                    {settings.contact.tel
-                      ? `  Tel:${toEnglishDigits(settings.contact.tel)}`
+                {contact.deliveryNote.text && (
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.12)',
+                      borderRadius: 10,
+                      padding: '4px 12px',
+                      fontSize: contact.deliveryNote.fontSize,
+                      fontFamily: contact.deliveryNote.fontFamily,
+                    }}
+                  >
+                    🚚 {contact.deliveryNote.text}
+                  </div>
+                )}
+                {contact.address.text && (
+                  <div
+                    className="opacity-90"
+                    style={{
+                      fontSize: contact.address.fontSize,
+                      fontFamily: contact.address.fontFamily,
+                    }}
+                  >
+                    📍 {contact.address.text}
+                  </div>
+                )}
+                {contact.complaints.text && (
+                  <div
+                    style={{
+                      fontSize: contact.complaints.fontSize,
+                      fontFamily: contact.complaints.fontFamily,
+                    }}
+                  >
+                    للشكاوى: {toEnglishDigits(contact.complaints.text)}
+                    {contact.tel.text
+                      ? `  ·  Tel: ${toEnglishDigits(contact.tel.text)}`
                       : ''}
                   </div>
                 )}
@@ -195,14 +395,18 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
               {/* الوكلاء يسار */}
               {settings.agents.filter((a) => a.name.trim() || a.phone.trim())
                 .length > 0 && (
-                <div
-                  className="space-y-0.5 text-left"
-                  style={{ fontSize: fonts.agents }}
-                >
+                <div className="space-y-1 text-left">
                   {settings.agents
                     .filter((a) => a.name.trim() || a.phone.trim())
                     .map((a) => (
-                      <div key={a.id} className="tabular-nums">
+                      <div
+                        key={a.id}
+                        className="tabular-nums"
+                        style={{
+                          fontSize: a.fontSize,
+                          fontFamily: a.fontFamily,
+                        }}
+                      >
                         {a.name}
                         {a.name && a.phone ? ': ' : ''}
                         {toEnglishDigits(a.phone)}
@@ -220,11 +424,17 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
 
 function BrandBlock({
   group,
-  fonts,
+  settings,
+  brandGradient,
 }: {
   group: PosterBrandGroup;
-  fonts: PosterSettings['fonts'];
+  settings: PosterSettings;
+  brandGradient: { from: string; to: string };
 }) {
+  const { productFonts } = settings;
+
+  const brandWarranties = warrantiesForBrand(settings.warranties, group.brandId);
+
   const categoryGroups = new Map<string, PosterLine[]>();
   for (const line of group.lines) {
     const key = line.categoryName ?? 'أخرى';
@@ -234,64 +444,117 @@ function BrandBlock({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-sky-100 bg-white shadow-md">
+    <div
+      className="overflow-hidden bg-white"
+      style={{
+        borderRadius: 14,
+        border: '1px solid #e0f2fe',
+        boxShadow: '0 8px 20px -12px rgba(30,64,175,0.35)',
+        fontFamily: productFonts.fontFamily,
+      }}
+    >
       <div
-        className="px-2 py-1.5 text-center font-bold uppercase tracking-wide text-white"
+        className="text-center font-black uppercase tracking-wide text-white"
         style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
-          fontSize: fonts.brandTitle,
+          background: `linear-gradient(135deg, ${brandGradient.from} 0%, ${brandGradient.to} 100%)`,
+          fontSize: productFonts.brandTitle,
+          padding: '7px 8px',
+          letterSpacing: '0.6px',
         }}
       >
         {group.brandName}
       </div>
 
-      <div
-        className="px-2 pt-0.5 text-center text-slate-400"
-        style={{ fontSize: fonts.categoryLabel }}
-      >
-        كفالة كسر شاشة
-      </div>
+      {brandWarranties.length > 0 && (
+        <div
+          className="text-center"
+          style={{
+            background: '#f0f9ff',
+            padding: '3px 6px',
+            borderBottom: '1px solid #e0f2fe',
+            lineHeight: 1.4,
+          }}
+        >
+          {brandWarranties.map((w, i) => (
+            <span
+              key={w.id}
+              className="font-semibold"
+              style={{
+                fontSize: w.brandFontSize,
+                fontFamily: w.fontFamily,
+                color: '#0369a1',
+              }}
+            >
+              {i > 0 && ' · '}
+              {w.name}
+              {w.duration ? ` (${toEnglishDigits(w.duration)})` : ''}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div>
         {[...categoryGroups.entries()]
           .sort(([a], [b]) => categorySortKey(a) - categorySortKey(b))
           .map(([catName, lines], ci) => (
             <div key={catName}>
-              {ci > 0 && (
-                <div className="mx-2 border-t border-dashed border-sky-200" />
-              )}
               {catName !== 'جوال' && catName !== 'أخرى' && (
                 <div
-                  className="px-2 pt-0.5 font-bold uppercase tracking-wide text-sky-600"
-                  style={{ fontSize: fonts.categoryLabel }}
+                  className="font-bold uppercase tracking-wide"
+                  style={{
+                    fontSize: productFonts.categoryLabel,
+                    color: '#0284c7',
+                    background: '#f0f9ff',
+                    padding: '2px 8px',
+                    borderTop: ci > 0 ? '1px dashed #bae6fd' : 'none',
+                  }}
                 >
                   {catName}
                 </div>
               )}
               <div>
-                {lines.map((line) => (
+                {lines.map((line, li) => (
                   <div
                     key={line.id}
-                    className="flex items-center justify-between gap-1.5 px-2 py-[2px]"
+                    className="flex items-center justify-between gap-2"
+                    style={{
+                      padding: '3px 8px',
+                      background: li % 2 === 1 ? '#f8fafc' : '#ffffff',
+                    }}
                   >
                     <span
-                      className="font-bold tabular-nums text-blue-700"
-                      style={{ fontSize: fonts.price }}
+                      className="font-black tabular-nums"
+                      style={{
+                        fontSize: productFonts.price,
+                        color: '#1d4ed8',
+                        whiteSpace: 'nowrap',
+                      }}
                     >
                       {formatPosterPrice(line.price)}
                     </span>
-                    <span className="flex items-baseline gap-2">
+                    <span
+                      className="flex items-baseline gap-2"
+                      style={{ minWidth: 0 }}
+                    >
                       {line.storage && (
                         <span
-                          className="shrink-0 font-normal text-slate-500"
-                          style={{ fontSize: fonts.productStorage }}
+                          className="shrink-0 font-medium"
+                          style={{
+                            fontSize: productFonts.productStorage,
+                            color: '#64748b',
+                            whiteSpace: 'nowrap',
+                          }}
                         >
                           {toEnglishDigits(line.storage)}
                         </span>
                       )}
                       <span
-                        className="font-bold text-slate-800"
-                        style={{ fontSize: fonts.productName }}
+                        className="font-bold"
+                        style={{
+                          fontSize: productFonts.productName,
+                          color: '#1e293b',
+                          whiteSpace: 'nowrap',
+                        }}
                       >
                         {toEnglishDigits(line.name)}
                       </span>

@@ -1,65 +1,188 @@
 import type { NewsletterProduct } from '@/services/newsletter.service';
 
 export type PosterMode = 'retail' | 'wholesale';
-export type PosterFormat = 'a4' | 'square' | 'story' | 'poster6';
 
-/** كفالة قابلة للتحكم: اسم + مدة + الماركات المستفيدة (فارغ = كل الماركات). */
+/** الخطوط المتاحة للاختيار في كل العبارات. */
+export const FONT_FAMILIES: { label: string; value: string }[] = [
+  { label: 'Cairo (افتراضي)', value: '"Cairo", sans-serif' },
+  { label: 'Tajawal', value: '"Tajawal", sans-serif' },
+  { label: 'Almarai', value: '"Almarai", sans-serif' },
+  { label: 'Changa', value: '"Changa", sans-serif' },
+  { label: 'Reem Kufi (كوفي)', value: '"Reem Kufi", sans-serif' },
+  { label: 'Lalezar (دعائي)', value: '"Lalezar", cursive' },
+  { label: 'Rakkas (دعائي)', value: '"Rakkas", cursive' },
+];
+
+export const DEFAULT_FONT_FAMILY = '"Cairo", sans-serif';
+export const MARKETING_FONT_FAMILY = '"Lalezar", cursive';
+
+/** كفالة: اسم + مدة + الماركات + أحجام وخطوط. */
 export interface WarrantyItem {
   id: string;
   name: string;
   duration: string;
   brandIds: string[];
+  fontSize: number;
+  brandFontSize: number;
+  fontFamily: string;
 }
 
-/** وكيل: اسم + رقم. */
+export interface PosterTheme {
+  headerFrom: string;
+  headerVia: string;
+  headerTo: string;
+  footerFrom: string;
+  footerTo: string;
+  sloganFrom: string;
+  sloganTo: string;
+
+  // اشتقاق تلقائي من الترويسة؟
+  brandAuto: boolean;
+  discountAuto: boolean;
+
+  // القيم اليدوية (تُستخدم فقط عند إيقاف التلقائي)
+  brandFrom: string;
+  brandTo: string;
+  discountFrom: string;
+  discountTo: string;
+}
+
+export const DEFAULT_THEME: PosterTheme = {
+  headerFrom: '#0369a1',
+  headerVia: '#1d4ed8',
+  headerTo: '#1e293b',
+  footerFrom: '#1e293b',
+  footerTo: '#1e3a8a',
+ 
+    sloganFrom: 'rgba(255,255,255,0.15)', // مثل خلفية التاريخ
+  sloganTo: 'rgba(255,255,255,0.25)',
+
+  brandAuto: true,
+  discountAuto: true,
+
+  brandFrom: '#1e3a8a',
+  brandTo: '#3b82f6',
+  discountFrom: '#1e3a8a',
+  discountTo: '#2563eb',
+};
+
+
+export function resolveGradients(theme: PosterTheme) {
+  const brand = theme.brandAuto
+    ? {
+        from: shadeColor(theme.headerVia, -0.15),
+        to: shadeColor(theme.headerVia, 0.25),
+      }
+    : { from: theme.brandFrom, to: theme.brandTo };
+
+  const discount = theme.discountAuto
+    ? {
+        from: shadeColor(theme.headerFrom, -0.1),
+        to: shadeColor(theme.headerVia, 0.1),
+      }
+    : { from: theme.discountFrom, to: theme.discountTo };
+
+  return { brand, discount };
+}
+
+
+
+/** وكيل: اسم + رقم + حجم وخط. */
 export interface AgentItem {
   id: string;
   name: string;
   phone: string;
+  fontSize: number;
+  fontFamily: string;
 }
 
-/** بيانات التواصل والفوتر — كلها قابلة للتحكم. */
+/** حقل نصي: نص + حجم خط + نوع خط. */
+export interface ContactField {
+  text: string;
+  fontSize: number;
+  fontFamily: string;
+}
+
 export interface ContactInfo {
-  slogan: string;
-  phones: string;
-  complaints: string;
-  tel: string;
-  address: string;
-  deliveryNote: string;
-  paymentNote: string;
-  wholesaleDiscount: string; // حسم على فواتير الجملة
+  slogan: ContactField;
+  brandName: ContactField;
+  brandNameAr: ContactField;
+  phones: ContactField;
+  complaints: ContactField;
+  tel: ContactField;
+  address: ContactField;
+  deliveryNote: ContactField;
+  paymentNote: ContactField;
+  wholesaleDiscount: ContactField;
+  date: ContactField;
 }
 
-/** أحجام الخطوط (px) — قابلة للتحكم بالكامل عبر المنزلقات. */
-export interface FontSizes {
-  brandTitle: number;   // عنوان الماركة
-  categoryLabel: number; // سطر "كفالة كسر شاشة" / اسم الفئة الصغير
-  productName: number;  // اسم المنتج
-  productStorage: number; // الذاكرة
-  price: number;        // السعر
-  warranty: number;     // نص الكفالات في الهيدر
-  brandName: number;    // اسم BAREQ Tel
-  slogan: number;       // الشعار
-  footer: number;       // نص الفوتر
-  agents: number;       // نص الوكلاء
+/** أحجام + خط بطاقات المنتجات (مشتركة). */
+export interface ProductFonts {
+  fontFamily: string;
+  brandTitle: number;
+  categoryLabel: number;
+  productName: number;
+  productStorage: number;
+  price: number;
+}
+
+export interface ColumnSettings {
+  auto: boolean;
+  manual: number;
 }
 
 export interface PosterSettings {
+    theme: PosterTheme;
   mode: PosterMode;
   onlyBrandIds: string[];
   invoiceDate: string;
   warranties: WarrantyItem[];
   agents: AgentItem[];
   contact: ContactInfo;
-  fonts: FontSizes;
+  productFonts: ProductFonts;
+  columns: ColumnSettings;
+    logoSize: number;        // حجم شعار bareq.png (الوسط)
+  cornerLogoSize: number;  // حجم logo.jpeg (الزاوية اليسرى)
+
 }
 
-/** مولّد معرّفات بسيط. */
+
+/** يحوّل hex إلى {r,g,b} */
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const c = (v: number) =>
+    Math.max(0, Math.min(255, Math.round(v)))
+      .toString(16)
+      .padStart(2, '0');
+  return `#${c(r)}${c(g)}${c(b)}`;
+}
+
+/** amount موجب = تفتيح، سالب = تغميق (من -1 إلى 1) */
+export function shadeColor(hex: string, amount: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  if (amount >= 0) {
+    return rgbToHex(
+      r + (255 - r) * amount,
+      g + (255 - g) * amount,
+      b + (255 - b) * amount
+    );
+  }
+  const k = 1 + amount;
+  return rgbToHex(r * k, g * k, b * k);
+}
+
+
 export function genId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-/** تحويل كل الأرقام العربية (٠-٩) إلى إنجليزية (0-9). */
 export function toEnglishDigits(
   input: string | number | null | undefined
 ): string {
@@ -75,42 +198,72 @@ export function toEnglishDigits(
   });
 }
 
+/** مُنشئ حقل تواصل. */
+function field(
+  text: string,
+  fontSize: number,
+  fontFamily: string = DEFAULT_FONT_FAMILY
+): ContactField {
+  return { text, fontSize, fontFamily };
+}
+
 export const DEFAULT_CONTACT: ContactInfo = {
-  slogan: 'ضمان يريح بالك',
-  phones: '0965677701, 0965677702, 0965677703',
-  complaints: '0965677710',
-  tel: '4807',
-  address: 'جانب برج دمشق مقابل جسر فكتوريا طابق أول',
-  deliveryNote: 'توصيل مجاني ضمن دمشق',
-  paymentNote: 'نقبل الدفع عن طريق شام كاش',
-  wholesaleDiscount: 'حسم على فواتير الجملة',
+  slogan: field('ضمان يريح بالك', 18, MARKETING_FONT_FAMILY),
+  brandName: field('BAREQ Tel', 30),
+  brandNameAr: field('بريق تيل', 15),
+  phones: field('0965677701, 0965677702, 0965677703', 11),
+  complaints: field('0965677710', 9),
+  tel: field('4807', 9),
+  address: field('جانب برج دمشق مقابل جسر فكتوريا طابق أول', 10),
+  deliveryNote: field('توصيل مجاني ضمن دمشق', 11),
+  paymentNote: field('نقبل الدفع عن طريق شام كاش', 11),
+  wholesaleDiscount: field('حسم على فواتير الجملة', 15, MARKETING_FONT_FAMILY),
+  date: field('', 21),
 };
 
-export const DEFAULT_FONTS: FontSizes = {
+export const DEFAULT_PRODUCT_FONTS: ProductFonts = {
+  fontFamily: DEFAULT_FONT_FAMILY,
   brandTitle: 13,
   categoryLabel: 9,
   productName: 11,
   productStorage: 10,
   price: 11,
-  warranty: 15,
-  brandName: 30,
-  slogan: 16,
-  footer: 11,
-  agents: 10,
 };
+
+export const DEFAULT_COLUMNS: ColumnSettings = {
+  auto: true,
+  manual: 6,
+};
+
+function warranty(name: string, duration: string): WarrantyItem {
+  return {
+    id: genId(),
+    name,
+    duration,
+    brandIds: [],
+    fontSize: 15,
+    brandFontSize: 9,
+    fontFamily: DEFAULT_FONT_FAMILY,
+  };
+}
 
 export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
   mode: 'retail',
+    logoSize: 70,
+  cornerLogoSize: 60,
+    theme: DEFAULT_THEME,
+
   onlyBrandIds: [],
   invoiceDate: new Date().toISOString().slice(0, 10),
   warranties: [
-    { id: genId(), name: 'كفالة كسر شاشة', duration: '120 يوم', brandIds: [] },
-    { id: genId(), name: 'كفالة سوء صنع', duration: '30 يوم', brandIds: [] },
-    { id: genId(), name: 'كفالة سوفت وير', duration: '5 سنوات', brandIds: [] },
+    warranty('كفالة كسر شاشة', '120 يوم'),
+    warranty('كفالة سوء صنع', '30 يوم'),
+    warranty('كفالة سوفت وير', '5 سنوات'),
   ],
   agents: [],
   contact: DEFAULT_CONTACT,
-  fonts: DEFAULT_FONTS,
+  productFonts: DEFAULT_PRODUCT_FONTS,
+  columns: DEFAULT_COLUMNS,
 };
 
 export interface PosterLine {
@@ -152,12 +305,23 @@ function rawPrice(p: NewsletterProduct, mode: PosterMode): number | null {
   return mode === 'wholesale' ? p.wholesale_price : p.price;
 }
 
-/** تنسيق السعر بأرقام إنجليزية بدون رمز (مثل الصورة). */
 export function formatPosterPrice(price: number | null): string {
   if (price == null) return '—';
   return new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2,
   }).format(price);
+}
+
+/**
+ * كفالات براند معيّن — فارغ = لا أحد.
+ */
+export function warrantiesForBrand(
+  warranties: WarrantyItem[],
+  brandId: string
+): WarrantyItem[] {
+  return warranties.filter(
+    (w) => w.name.trim() && w.brandIds.includes(brandId)
+  );
 }
 
 export function buildPoster(
@@ -207,27 +371,67 @@ export function buildPoster(
   return result;
 }
 
-/**
- * توزيع الماركات على أعمدة بحيث تُملأ عموداً عموداً (يمين → يسار في RTL)
- * لتشبه ترتيب الصورة، مع موازنة الأحمال.
- */
+export function estimateColumnWidth(
+  groups: PosterBrandGroup[],
+  productFonts: ProductFonts
+): number {
+  let maxNameLen = 0;
+  let maxStorageLen = 0;
+  let maxBrandLen = 0;
+
+  for (const g of groups) {
+    maxBrandLen = Math.max(maxBrandLen, g.brandName.length);
+    for (const line of g.lines) {
+      maxNameLen = Math.max(maxNameLen, toEnglishDigits(line.name).length);
+      maxStorageLen = Math.max(
+        maxStorageLen,
+        line.storage ? toEnglishDigits(line.storage).length : 0
+      );
+    }
+  }
+
+  const CHAR = 0.58;
+  const nameW = maxNameLen * productFonts.productName * CHAR;
+  const storageW = maxStorageLen * productFonts.productStorage * CHAR;
+  const priceW = 6 * productFonts.price * CHAR;
+  const brandW = maxBrandLen * productFonts.brandTitle * CHAR;
+
+  const contentW = Math.max(nameW + storageW + priceW + 34, brandW + 20);
+  return Math.ceil(contentW);
+}
+
+export function computeColumnCount(
+  groups: PosterBrandGroup[],
+  productFonts: ProductFonts,
+  posterWidth: number,
+  gap: number
+): number {
+  if (groups.length === 0) return 1;
+
+  const colW = estimateColumnWidth(groups, productFonts);
+  const maxByWidth = Math.max(
+    1,
+    Math.floor((posterWidth + gap) / (colW + gap))
+  );
+  const byBrands = Math.min(maxByWidth, groups.length);
+  return Math.min(byBrands, 8);
+}
+
 export function distributeIntoColumns(
   groups: PosterBrandGroup[],
   columnCount: number
 ): PosterBrandGroup[][] {
-  const columns: PosterBrandGroup[][] = Array.from(
-    { length: columnCount },
-    () => []
-  );
-  const loads = new Array(columnCount).fill(0);
+  const count = Math.max(1, columnCount);
+  const columns: PosterBrandGroup[][] = Array.from({ length: count }, () => []);
+  const loads = new Array(count).fill(0);
 
   for (const g of groups) {
     let min = 0;
-    for (let i = 1; i < columnCount; i++) {
+    for (let i = 1; i < count; i++) {
       if (loads[i] < loads[min]) min = i;
     }
     columns[min].push(g);
-    loads[min] += g.lines.length + 2; // +2 للعنوان وسطر الكفالة
+    loads[min] += g.lines.length + 2;
   }
   return columns;
 }

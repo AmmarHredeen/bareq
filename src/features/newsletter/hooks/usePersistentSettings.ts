@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import {
   DEFAULT_POSTER_SETTINGS,
   DEFAULT_CONTACT,
-  DEFAULT_FONTS,
+  DEFAULT_PRODUCT_FONTS,
+  DEFAULT_COLUMNS,
   type PosterSettings,
+  DEFAULT_THEME,
 } from '@/features/newsletter/lib/poster';
 
-const STORAGE_KEY = 'bareq_poster_settings_v1';
+const STORAGE_KEY = 'bareq_poster_settings_v6';
 
-/** يقرأ الإعدادات المحفوظة ويدمجها مع الافتراضية (لضمان اكتمال الحقول). */
+
 function loadSettings(): PosterSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -17,12 +19,12 @@ function loadSettings(): PosterSettings {
     return {
       ...DEFAULT_POSTER_SETTINGS,
       ...parsed,
-      // تاريخ الفاتورة يُحدّث لليوم عند كل فتح (لأنه نشرة يومية)
       invoiceDate: new Date().toISOString().slice(0, 10),
-      // دمج بيانات التواصل لضمان عدم فقد أي حقل جديد
       contact: { ...DEFAULT_CONTACT, ...(parsed.contact ?? {}) },
-      // دمج أحجام الخطوط لضمان اكتمال أي حقل جديد
-      fonts: { ...DEFAULT_FONTS, ...(parsed.fonts ?? {}) },
+      productFonts: { ...DEFAULT_PRODUCT_FONTS, ...(parsed.productFonts ?? {}) },
+      columns: { ...DEFAULT_COLUMNS, ...(parsed.columns ?? {}) },
+      theme: { ...DEFAULT_THEME, ...(parsed.theme ?? {}) },
+
     };
   } catch {
     return DEFAULT_POSTER_SETTINGS;
@@ -32,16 +34,14 @@ function loadSettings(): PosterSettings {
 export function usePersistentSettings() {
   const [settings, setSettings] = useState<PosterSettings>(loadSettings);
 
-  // حفظ تلقائي عند أي تغيير
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch {
-      // تجاهل أخطاء التخزين (مثلاً وضع التصفح الخاص)
+      // تجاهل أخطاء التخزين
     }
   }, [settings]);
 
-  /** إعادة الضبط للافتراضي (اختياري). */
   const resetSettings = () => {
     localStorage.removeItem(STORAGE_KEY);
     setSettings(loadSettings());

@@ -1,14 +1,31 @@
-import { Printer, ImageDown, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Printer,
+  ImageDown,
+  Plus,
+  Trash2,
+  Columns3,
+  ChevronDown,
+  LayoutTemplate,
+  Type,
+  ShieldCheck,
+  MapPin,
+  Users,
+} from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button, Input, Select } from '@/components/ui';
 import {
   genId,
-  DEFAULT_FONTS,
+  DEFAULT_PRODUCT_FONTS,
+  DEFAULT_FONT_FAMILY,
+  FONT_FAMILIES,
   type PosterSettings,
   type PosterMode,
   type WarrantyItem,
   type AgentItem,
-  type FontSizes,
+  type ContactInfo,
+  type ContactField,
+  type ProductFonts,
 } from '@/features/newsletter/lib/poster';
 import type { NewsletterFilterOption } from '@/services/newsletter.service';
 
@@ -21,62 +38,146 @@ interface PosterToolbarProps {
   exporting: boolean;
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-      {children}
-    </p>
-  );
-}
+const FONT_OPTIONS = FONT_FAMILIES.map((f) => ({
+  value: f.value,
+  label: f.label,
+}));
 
-/** منزلق واحد لحجم خط. */
-function FontSlider({
-  label,
-  value,
-  min = 6,
-  max = 48,
-  onChange,
+function Accordion({
+  title,
+  icon: Icon,
+  defaultOpen = false,
+  action,
+  children,
 }: {
-  label: string;
-  value: number;
-  min?: number;
-  max?: number;
-  onChange: (v: number) => void;
+  title: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  defaultOpen?: boolean;
+  action?: React.ReactNode;
+  children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-lg border border-slate-200 p-2.5 dark:border-slate-700">
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-          {label}
-        </span>
-        <span className="tabular-nums text-xs font-bold text-blue-600 dark:text-blue-300">
-          {value}px
-        </span>
+    <div className="rounded-xl border border-slate-200 dark:border-slate-700">
+      <div className="flex items-center justify-between px-3 py-2.5">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex flex-1 items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200"
+        >
+          <Icon size={16} className="text-blue-500" />
+          {title}
+          <ChevronDown
+            size={16}
+            className={cn(
+              'ms-auto text-slate-400 transition-transform',
+              open && 'rotate-180'
+            )}
+          />
+        </button>
+        {action && <div className="ms-2">{action}</div>}
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-blue-600"
-      />
+      {open && (
+        <div className="border-t border-slate-100 p-3 dark:border-slate-700/60">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
-const FONT_FIELDS: { key: keyof FontSizes; label: string; max?: number }[] = [
-  { key: 'brandName', label: 'اسم BAREQ Tel', max: 60 },
-  { key: 'slogan', label: 'الشعار' },
-  { key: 'warranty', label: 'الكفالات' },
-  { key: 'brandTitle', label: 'عنوان الماركة' },
-  { key: 'categoryLabel', label: 'الفئة / كفالة صغيرة' },
-  { key: 'productName', label: 'اسم المنتج' },
-  { key: 'productStorage', label: 'الذاكرة' },
-  { key: 'price', label: 'السعر' },
-  { key: 'footer', label: 'الفوتر' },
-  { key: 'agents', label: 'الوكلاء' },
-];
+function SizeStepper({
+  value,
+  onChange,
+  min = 6,
+  max = 60,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+}) {
+  const clamp = (v: number) => Math.min(max, Math.max(min, v));
+  return (
+    <div
+      className="flex shrink-0 items-center rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60"
+      title="حجم الخط"
+    >
+      <button
+        type="button"
+        onClick={() => onChange(clamp(value - 1))}
+        className="flex h-8 w-7 items-center justify-center rounded-r-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
+      >
+        −
+      </button>
+      <input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => onChange(clamp(Number(e.target.value) || min))}
+        className="w-9 bg-transparent text-center text-sm font-bold tabular-nums text-slate-700 outline-none dark:text-slate-200"
+      />
+      <button
+        type="button"
+        onClick={() => onChange(clamp(value + 1))}
+        className="flex h-8 w-7 items-center justify-center rounded-l-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+/** حقل نصي + حجم + نوع خط. */
+function FieldWithSize({
+  label,
+  field,
+  onTextChange,
+  onSizeChange,
+  onFontChange,
+  placeholder,
+  textOnlySize = false,
+}: {
+  label: string;
+  field: ContactField;
+  onTextChange?: (v: string) => void;
+  onSizeChange: (v: number) => void;
+  onFontChange: (v: string) => void;
+  placeholder?: string;
+  textOnlySize?: boolean;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        {label}
+      </label>
+      <div className="flex items-center gap-1.5">
+        {textOnlySize ? (
+          <div className="flex-1 rounded-lg border border-dashed border-slate-300 px-2.5 py-1.5 text-xs text-slate-400 dark:border-slate-600">
+            تلقائي
+          </div>
+        ) : (
+          <div className="flex-1">
+            <Input
+              value={field.text}
+              placeholder={placeholder}
+              onChange={(e) => onTextChange?.(e.target.value)}
+            />
+          </div>
+        )}
+        <SizeStepper value={field.fontSize} onChange={onSizeChange} />
+      </div>
+      <div className="mt-1.5">
+        <Select
+          value={field.fontFamily}
+          options={FONT_OPTIONS}
+          onChange={(e) => onFontChange(e.target.value)}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function PosterToolbar({
   settings,
@@ -88,13 +189,18 @@ export function PosterToolbar({
 }: PosterToolbarProps) {
   const patch = (p: Partial<PosterSettings>) => onChange({ ...settings, ...p });
 
-  const patchContact = (p: Partial<PosterSettings['contact']>) =>
-    patch({ contact: { ...settings.contact, ...p } });
+  const patchContact = (key: keyof ContactInfo, p: Partial<ContactField>) =>
+    patch({
+      contact: {
+        ...settings.contact,
+        [key]: { ...settings.contact[key], ...p },
+      },
+    });
 
-  const patchFont = (key: keyof FontSizes, value: number) =>
-    patch({ fonts: { ...settings.fonts, [key]: value } });
+  const patchProductFont = (key: keyof ProductFonts, value: number | string) =>
+    patch({ productFonts: { ...settings.productFonts, [key]: value } });
 
-  const resetFonts = () => patch({ fonts: DEFAULT_FONTS });
+  const resetProductFonts = () => patch({ productFonts: DEFAULT_PRODUCT_FONTS });
 
   const toggleBrand = (id: string) => {
     const set = new Set(settings.onlyBrandIds);
@@ -103,7 +209,6 @@ export function PosterToolbar({
     patch({ onlyBrandIds: [...set] });
   };
 
-  // ===== الكفالات =====
   const updateWarranty = (id: string, p: Partial<WarrantyItem>) =>
     patch({
       warranties: settings.warranties.map((w) =>
@@ -115,7 +220,15 @@ export function PosterToolbar({
     patch({
       warranties: [
         ...settings.warranties,
-        { id: genId(), name: '', duration: '', brandIds: [] },
+        {
+          id: genId(),
+          name: '',
+          duration: '',
+          brandIds: [],
+          fontSize: 15,
+          brandFontSize: 9,
+          fontFamily: DEFAULT_FONT_FAMILY,
+        },
       ],
     });
 
@@ -131,7 +244,6 @@ export function PosterToolbar({
     updateWarranty(wid, { brandIds: [...set] });
   };
 
-  // ===== الوكلاء =====
   const updateAgent = (id: string, p: Partial<AgentItem>) =>
     patch({
       agents: settings.agents.map((a) => (a.id === id ? { ...a, ...p } : a)),
@@ -139,248 +251,434 @@ export function PosterToolbar({
 
   const addAgent = () =>
     patch({
-      agents: [...settings.agents, { id: genId(), name: '', phone: '' }],
+      agents: [
+        ...settings.agents,
+        {
+          id: genId(),
+          name: '',
+          phone: '',
+          fontSize: 10,
+          fontFamily: DEFAULT_FONT_FAMILY,
+        },
+      ],
     });
 
   const removeAgent = (id: string) =>
     patch({ agents: settings.agents.filter((a) => a.id !== id) });
 
-  return (
-    <div className="no-print space-y-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[var(--shadow-card)] dark:border-slate-800 dark:bg-slate-900">
-      {/* أزرار الإخراج */}
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button variant="secondary" onClick={onExportPng} disabled={exporting}>
-          <ImageDown size={16} />
-          {exporting ? 'جارٍ التصدير…' : 'تصدير PNG'}
-        </Button>
-        <Button onClick={onPrint}>
-          <Printer size={16} />
-          PDF
-        </Button>
-      </div>
+  const productFontFields: { key: keyof ProductFonts; label: string }[] = [
+    { key: 'brandTitle', label: 'عنوان الماركة' },
+    { key: 'categoryLabel', label: 'اسم الفئة' },
+    { key: 'productName', label: 'اسم المنتج' },
+    { key: 'productStorage', label: 'الذاكرة' },
+    { key: 'price', label: 'السعر' },
+  ];
 
-      {/* نوع السعر */}
-      <div>
-        <SectionLabel>نوع السعر</SectionLabel>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+  return (
+    <div className="no-print rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[var(--shadow-card)] dark:border-slate-800 dark:bg-slate-900">
+      {/* شريط علوي */}
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+        <div className="min-w-[120px] flex-1">
           <Select
             value={settings.mode}
             options={[
-              { value: 'retail', label: 'مفرق' },
-              { value: 'wholesale', label: 'جملة' },
+              { value: 'retail', label: 'سعر: مفرق' },
+              { value: 'wholesale', label: 'سعر: جملة' },
             ]}
             onChange={(e) => patch({ mode: e.target.value as PosterMode })}
           />
         </div>
-      </div>
 
-      {/* ===== أحجام الخطوط ===== */}
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <SectionLabel>أحجام الخطوط</SectionLabel>
-          <Button variant="secondary" onClick={resetFonts}>
-            إعادة الضبط
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {FONT_FIELDS.map(({ key, label, max }) => (
-            <FontSlider
-              key={key}
-              label={label}
-              value={settings.fonts[key]}
-              max={max}
-              onChange={(v) => patchFont(key, v)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* فلترة الماركات */}
-      <div>
-        <SectionLabel>عرض ماركات محددة (فارغ = الكل)</SectionLabel>
-        <div className="flex flex-wrap gap-2">
-          {brands.map((b) => {
-            const active = settings.onlyBrandIds.includes(b.id);
-            return (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => toggleBrand(b.id)}
-                className={cn(
-                  'rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
-                  active
-                    ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/15 dark:text-blue-300'
-                    : 'border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400'
-                )}
-              >
-                {b.name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* بيانات التواصل والفوتر */}
-      <div>
-        <SectionLabel>بيانات التواصل (تظهر في الفوتر)</SectionLabel>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
-            label="الشعار / العبارة"
-            value={settings.contact.slogan}
-            onChange={(e) => patchContact({ slogan: e.target.value })}
-          />
-          <Input
-            label="أرقام الهاتف (بفاصلة)"
-            placeholder="0965677701, 0965677702"
-            value={settings.contact.phones}
-            onChange={(e) => patchContact({ phones: e.target.value })}
-          />
-          <Input
-            label="رقم الشكاوى"
-            value={settings.contact.complaints}
-            onChange={(e) => patchContact({ complaints: e.target.value })}
-          />
-          <Input
-            label="Tel"
-            value={settings.contact.tel}
-            onChange={(e) => patchContact({ tel: e.target.value })}
-          />
-          <Input
-            label="الموقع / العنوان"
-            value={settings.contact.address}
-            onChange={(e) => patchContact({ address: e.target.value })}
-          />
-          <Input
-            label="حسم الجملة"
-            value={settings.contact.wholesaleDiscount}
+        <div className="flex min-w-[200px] flex-1 items-center gap-2">
+          <Select
+            value={settings.columns.auto ? 'auto' : 'manual'}
+            options={[
+              { value: 'auto', label: 'أعمدة: تلقائي' },
+              { value: 'manual', label: 'أعمدة: يدوي' },
+            ]}
             onChange={(e) =>
-              patchContact({ wholesaleDiscount: e.target.value })
+              patch({
+                columns: {
+                  ...settings.columns,
+                  auto: e.target.value === 'auto',
+                },
+              })
             }
           />
-          <Input
-            label="ملاحظة التوصيل"
-            value={settings.contact.deliveryNote}
-            onChange={(e) => patchContact({ deliveryNote: e.target.value })}
-          />
-          <Input
-            label="ملاحظة الدفع"
-            value={settings.contact.paymentNote}
-            onChange={(e) => patchContact({ paymentNote: e.target.value })}
-          />
+          {!settings.columns.auto && (
+            <Select
+              value={String(settings.columns.manual)}
+              options={[2, 3, 4, 5, 6, 7, 8].map((n) => ({
+                value: String(n),
+                label: `${n}`,
+              }))}
+              onChange={(e) =>
+                patch({
+                  columns: {
+                    ...settings.columns,
+                    manual: Number(e.target.value),
+                  },
+                })
+              }
+            />
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={onExportPng} disabled={exporting}>
+            <ImageDown size={16} />
+            {exporting ? '…' : 'PNG'}
+          </Button>
+          <Button onClick={onPrint}>
+            <Printer size={16} />
+            PDF
+          </Button>
         </div>
       </div>
 
-      {/* الكفالات */}
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <SectionLabel>الكفالات</SectionLabel>
-          <Button variant="secondary" onClick={addWarranty}>
-            <Plus size={14} />
-            إضافة كفالة
-          </Button>
-        </div>
+      <div className="space-y-3">
+        {/* الترويسة والوسط */}
+        <Accordion title="الترويسة والوسط" icon={LayoutTemplate} defaultOpen>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <FieldWithSize
+              label="الشعار (ضمان يريح بالك)"
+              field={settings.contact.slogan}
+              onTextChange={(v) => patchContact('slogan', { text: v })}
+              onSizeChange={(v) => patchContact('slogan', { fontSize: v })}
+              onFontChange={(v) => patchContact('slogan', { fontFamily: v })}
+            />
+            <FieldWithSize
+              label="BAREQ Tel"
+              field={settings.contact.brandName}
+              onTextChange={(v) => patchContact('brandName', { text: v })}
+              onSizeChange={(v) => patchContact('brandName', { fontSize: v })}
+              onFontChange={(v) => patchContact('brandName', { fontFamily: v })}
+            />
+            <FieldWithSize
+              label="بريق تيل"
+              field={settings.contact.brandNameAr}
+              onTextChange={(v) => patchContact('brandNameAr', { text: v })}
+              onSizeChange={(v) =>
+                patchContact('brandNameAr', { fontSize: v })
+              }
+              onFontChange={(v) =>
+                patchContact('brandNameAr', { fontFamily: v })
+              }
+            />
+            <FieldWithSize
+              label="التاريخ (أعلى النشرة)"
+              field={settings.contact.date}
+              onSizeChange={(v) => patchContact('date', { fontSize: v })}
+              onFontChange={(v) => patchContact('date', { fontFamily: v })}
+              textOnlySize
+            />
+            <FieldWithSize
+              label="حسم الجملة"
+              field={settings.contact.wholesaleDiscount}
+              onTextChange={(v) =>
+                patchContact('wholesaleDiscount', { text: v })
+              }
+              onSizeChange={(v) =>
+                patchContact('wholesaleDiscount', { fontSize: v })
+              }
+              onFontChange={(v) =>
+                patchContact('wholesaleDiscount', { fontFamily: v })
+              }
+            />
+          </div>
+        </Accordion>
 
-        <div className="space-y-3">
-          {settings.warranties.map((w) => (
-            <div
-              key={w.id}
-              className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
-            >
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                <Input
-                  placeholder="اسم الكفالة (كفالة كسر شاشة)"
-                  value={w.name}
-                  onChange={(e) =>
-                    updateWarranty(w.id, { name: e.target.value })
-                  }
+        {/* أحجام خطوط المنتجات */}
+        <Accordion
+          title="خطوط المنتجات"
+          icon={Type}
+          action={
+            <Button variant="secondary" onClick={resetProductFonts}>
+              إعادة الضبط
+            </Button>
+          }
+        >
+          <div className="mb-3">
+            <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              نوع خط بطاقات المنتجات
+            </label>
+            <Select
+              value={settings.productFonts.fontFamily}
+              options={FONT_OPTIONS}
+              onChange={(e) => patchProductFont('fontFamily', e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {productFontFields.map(({ key, label }) => (
+              <div key={key}>
+                <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {label}
+                </label>
+                <SizeStepper
+                  value={settings.productFonts[key] as number}
+                  onChange={(v) => patchProductFont(key, v)}
                 />
-                <Input
-                  placeholder="المدة (120 يوم)"
-                  value={w.duration}
-                  onChange={(e) =>
-                    updateWarranty(w.id, { duration: e.target.value })
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => removeWarranty(w.id)}
-                  className="flex items-center justify-center rounded-lg border border-red-200 px-3 text-red-500 transition hover:bg-red-50 dark:border-red-500/30 dark:hover:bg-red-500/10"
-                  title="حذف"
-                >
-                  <Trash2 size={16} />
-                </button>
               </div>
+            ))}
+          </div>
+        </Accordion>
 
-              <div className="mt-2">
-                <p className="mb-1.5 text-[11px] text-slate-400">
-                  الماركات المستفيدة (فارغ = كل الماركات)
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {brands.map((b) => {
-                    const active = w.brandIds.includes(b.id);
-                    return (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() => toggleWarrantyBrand(w.id, b.id)}
-                        className={cn(
-                          'rounded-full border px-2.5 py-1 text-xs font-medium transition-all',
-                          active
-                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-300'
-                            : 'border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400'
-                        )}
-                      >
-                        {b.name}
-                      </button>
-                    );
-                  })}
+        {/* الفوتر */}
+        <Accordion title="الفوتر وبيانات التواصل" icon={MapPin}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <FieldWithSize
+              label="أرقام الهاتف (بفاصلة)"
+              field={settings.contact.phones}
+              placeholder="0965677701, 0965677702"
+              onTextChange={(v) => patchContact('phones', { text: v })}
+              onSizeChange={(v) => patchContact('phones', { fontSize: v })}
+              onFontChange={(v) => patchContact('phones', { fontFamily: v })}
+            />
+            <FieldWithSize
+              label="ملاحظة الدفع"
+              field={settings.contact.paymentNote}
+              onTextChange={(v) => patchContact('paymentNote', { text: v })}
+              onSizeChange={(v) =>
+                patchContact('paymentNote', { fontSize: v })
+              }
+              onFontChange={(v) =>
+                patchContact('paymentNote', { fontFamily: v })
+              }
+            />
+            <FieldWithSize
+              label="ملاحظة التوصيل"
+              field={settings.contact.deliveryNote}
+              onTextChange={(v) => patchContact('deliveryNote', { text: v })}
+              onSizeChange={(v) =>
+                patchContact('deliveryNote', { fontSize: v })
+              }
+              onFontChange={(v) =>
+                patchContact('deliveryNote', { fontFamily: v })
+              }
+            />
+            <FieldWithSize
+              label="الموقع / العنوان"
+              field={settings.contact.address}
+              onTextChange={(v) => patchContact('address', { text: v })}
+              onSizeChange={(v) => patchContact('address', { fontSize: v })}
+              onFontChange={(v) => patchContact('address', { fontFamily: v })}
+            />
+            <FieldWithSize
+              label="رقم الشكاوى"
+              field={settings.contact.complaints}
+              onTextChange={(v) => patchContact('complaints', { text: v })}
+              onSizeChange={(v) =>
+                patchContact('complaints', { fontSize: v })
+              }
+              onFontChange={(v) =>
+                patchContact('complaints', { fontFamily: v })
+              }
+            />
+            <FieldWithSize
+              label="Tel"
+              field={settings.contact.tel}
+              onTextChange={(v) => patchContact('tel', { text: v })}
+              onSizeChange={(v) => patchContact('tel', { fontSize: v })}
+              onFontChange={(v) => patchContact('tel', { fontFamily: v })}
+            />
+          </div>
+        </Accordion>
+
+        {/* فلترة الماركات */}
+        <Accordion title="عرض ماركات محددة" icon={Columns3}>
+          <p className="mb-2 text-[11px] text-slate-400">فارغ = عرض الكل</p>
+          <div className="flex flex-wrap gap-2">
+            {brands.map((b) => {
+              const active = settings.onlyBrandIds.includes(b.id);
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => toggleBrand(b.id)}
+                  className={cn(
+                    'rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
+                    active
+                      ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/15 dark:text-blue-300'
+                      : 'border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400'
+                  )}
+                >
+                  {b.name}
+                </button>
+              );
+            })}
+          </div>
+        </Accordion>
+
+        {/* الكفالات */}
+        <Accordion
+          title="الكفالات"
+          icon={ShieldCheck}
+          action={
+            <Button variant="secondary" onClick={addWarranty}>
+              <Plus size={14} />
+              إضافة
+            </Button>
+          }
+        >
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {settings.warranties.map((w) => (
+              <div
+                key={w.id}
+                className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
+              >
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-[11px] text-slate-400">
+                      اسم الكفالة (حجم الشريط العلوي)
+                    </label>
+                    <Input
+                      placeholder="كفالة كسر شاشة"
+                      value={w.name}
+                      onChange={(e) =>
+                        updateWarranty(w.id, { name: e.target.value })
+                      }
+                    />
+                  </div>
+                  <SizeStepper
+                    value={w.fontSize}
+                    onChange={(v) => updateWarranty(w.id, { fontSize: v })}
+                  />
+                </div>
+
+                <div className="mt-2 flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-[11px] text-slate-400">
+                      المدة (حجم تحت الماركة)
+                    </label>
+                    <Input
+                      placeholder="120 يوم"
+                      value={w.duration}
+                      onChange={(e) =>
+                        updateWarranty(w.id, { duration: e.target.value })
+                      }
+                    />
+                  </div>
+                  <SizeStepper
+                    value={w.brandFontSize}
+                    onChange={(v) =>
+                      updateWarranty(w.id, { brandFontSize: v })
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeWarranty(w.id)}
+                    className="flex h-8 items-center justify-center rounded-lg border border-red-200 px-3 text-red-500 transition hover:bg-red-50 dark:border-red-500/30 dark:hover:bg-red-500/10"
+                    title="حذف"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                <div className="mt-2">
+                  <label className="mb-1 block text-[11px] text-slate-400">
+                    نوع الخط
+                  </label>
+                  <Select
+                    value={w.fontFamily}
+                    options={FONT_OPTIONS}
+                    onChange={(e) =>
+                      updateWarranty(w.id, { fontFamily: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="mt-2">
+                  <p className="mb-1.5 text-[11px] text-slate-400">
+                    الماركات المستفيدة (اختر ماركة على الأقل لتظهر)
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {brands.map((b) => {
+                      const active = w.brandIds.includes(b.id);
+                      return (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => toggleWarrantyBrand(w.id, b.id)}
+                          className={cn(
+                            'rounded-full border px-2.5 py-1 text-xs font-medium transition-all',
+                            active
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-300'
+                              : 'border-slate-200 text-slate-500 hover:border-slate-300 dark:border-slate-700 dark:text-slate-400'
+                          )}
+                        >
+                          {b.name}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </Accordion>
 
-      {/* الوكلاء */}
-      <div>
-        <div className="mb-2 flex items-center justify-between">
-          <SectionLabel>الوكلاء</SectionLabel>
-          <Button variant="secondary" onClick={addAgent}>
-            <Plus size={14} />
-            إضافة وكيل
-          </Button>
-        </div>
-
-        <div className="space-y-2">
-          {settings.agents.length === 0 && (
+        {/* الوكلاء */}
+        <Accordion
+          title="الوكلاء"
+          icon={Users}
+          action={
+            <Button variant="secondary" onClick={addAgent}>
+              <Plus size={14} />
+              إضافة
+            </Button>
+          }
+        >
+          {settings.agents.length === 0 ? (
             <p className="text-xs text-slate-400">لا يوجد وكلاء مضافون بعد</p>
-          )}
-          {settings.agents.map((a) => (
-            <div
-              key={a.id}
-              className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]"
-            >
-              <Input
-                placeholder="اسم الوكيل (وكيل حمص)"
-                value={a.name}
-                onChange={(e) => updateAgent(a.id, { name: e.target.value })}
-              />
-              <Input
-                placeholder="رقم الهاتف"
-                value={a.phone}
-                onChange={(e) => updateAgent(a.id, { phone: e.target.value })}
-              />
-              <button
-                type="button"
-                onClick={() => removeAgent(a.id)}
-                className="flex items-center justify-center rounded-lg border border-red-200 px-3 text-red-500 transition hover:bg-red-50 dark:border-red-500/30 dark:hover:bg-red-500/10"
-                title="حذف"
-              >
-                <Trash2 size={16} />
-              </button>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {settings.agents.map((a) => (
+                <div
+                  key={a.id}
+                  className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
+                >
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="اسم الوكيل (وكيل حمص)"
+                      value={a.name}
+                      onChange={(e) =>
+                        updateAgent(a.id, { name: e.target.value })
+                      }
+                    />
+                    <Input
+                      placeholder="رقم الهاتف"
+                      value={a.phone}
+                      onChange={(e) =>
+                        updateAgent(a.id, { phone: e.target.value })
+                      }
+                    />
+                    <SizeStepper
+                      value={a.fontSize}
+                      onChange={(v) => updateAgent(a.id, { fontSize: v })}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeAgent(a.id)}
+                      className="flex h-8 items-center justify-center rounded-lg border border-red-200 px-3 text-red-500 transition hover:bg-red-50 dark:border-red-500/30 dark:hover:bg-red-500/10"
+                      title="حذف"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="mt-2">
+                    <Select
+                      value={a.fontFamily}
+                      options={FONT_OPTIONS}
+                      onChange={(e) =>
+                        updateAgent(a.id, { fontFamily: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </Accordion>
       </div>
     </div>
   );
