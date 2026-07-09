@@ -24,7 +24,7 @@ const PADDING = 24;
 const COL_GAP = 12;
 
 export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
-  function PosterCanvas({ groups, settings, allBrands }, ref) {
+  function PosterCanvas({ groups, settings }, ref) {
     const { contact, productFonts, theme } = settings;
     const gradients = resolveGradients(theme);
 
@@ -104,9 +104,8 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                 minWidth: contact.slogan.fontSize * 5.5,
                 maxWidth: contact.slogan.fontSize * 8,
                 lineHeight: 1.35,
-                padding: `${contact.slogan.fontSize * 0.7}px ${
-                  contact.slogan.fontSize * 0.9
-                }px`,
+                padding: `${contact.slogan.fontSize * 0.7}px ${contact.slogan.fontSize * 0.9
+                  }px`,
                 backgroundColor: theme.sloganFrom,
                 border: '1px solid rgba(255,255,255,0.25)',
                 color: '#ffffff',
@@ -248,9 +247,8 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                 style={{
                   backgroundColor: gradients.discount.from,
                   borderRadius: contact.wholesaleDiscount.fontSize * 0.75,
-                  padding: `${contact.wholesaleDiscount.fontSize * 0.75}px ${
-                    contact.wholesaleDiscount.fontSize * 1.4
-                  }px`,
+                  padding: `${contact.wholesaleDiscount.fontSize * 0.75}px ${contact.wholesaleDiscount.fontSize * 1.4
+                    }px`,
                   boxShadow: '0 12px 26px -10px rgba(0,0,0,0.45)',
                   border: `${Math.max(
                     2,
@@ -395,25 +393,25 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
               {/* الوكلاء يسار */}
               {settings.agents.filter((a) => a.name.trim() || a.phone.trim())
                 .length > 0 && (
-                <div className="space-y-1 text-left">
-                  {settings.agents
-                    .filter((a) => a.name.trim() || a.phone.trim())
-                    .map((a) => (
-                      <div
-                        key={a.id}
-                        className="tabular-nums"
-                        style={{
-                          fontSize: a.fontSize,
-                          fontFamily: a.fontFamily,
-                        }}
-                      >
-                        {a.name}
-                        {a.name && a.phone ? ': ' : ''}
-                        {toEnglishDigits(a.phone)}
-                      </div>
-                    ))}
-                </div>
-              )}
+                  <div className="space-y-1 text-left">
+                    {settings.agents
+                      .filter((a) => a.name.trim() || a.phone.trim())
+                      .map((a) => (
+                        <div
+                          key={a.id}
+                          className="tabular-nums"
+                          style={{
+                            fontSize: a.fontSize,
+                            fontFamily: a.fontFamily,
+                          }}
+                        >
+                          {a.name}
+                          {a.name && a.phone ? ': ' : ''}
+                          {toEnglishDigits(a.phone)}
+                        </div>
+                      ))}
+                  </div>
+                )}
             </div>
           </footer>
         </div>
