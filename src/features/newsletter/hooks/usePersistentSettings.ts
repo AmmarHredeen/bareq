@@ -8,7 +8,7 @@ import {
   DEFAULT_THEME,
 } from '@/features/newsletter/lib/poster';
 
-const STORAGE_KEY = 'bareq_poster_settings_v6';
+const STORAGE_KEY = 'bareq_poster_settings_v7';
 
 
 function loadSettings(): PosterSettings {
