@@ -40,8 +40,8 @@ export function useProductMutations() {
       toast.success('تمت إضافة المنتج بنجاح');
       invalidate();
     },
-    onError: () =>
-      toast.error('فشل إضافة المنتج. تحقق من الباركود/IMEI المكرر.'),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : 'فشل إضافة المنتج'),
   });
 
   const update = useMutation({

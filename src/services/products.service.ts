@@ -103,6 +103,20 @@ export const productsService = {
   },
 
   async create(input: ProductInput): Promise<Product> {
+    const { data: existing } = await supabase
+      .from(TABLE)
+      .select('id')
+      .is('deleted_at', null)
+      .eq('name', input.name)
+      .eq('storage_option_id', input.storage_option_id)
+      .eq('brand_id', input.brand_id)
+      .eq('category_id', input.category_id)
+      .maybeSingle();
+
+    if (existing) {
+      throw new Error('يوجد منتج بنفس الاسم والذاكرة والبراند والفئة بالفعل');
+    }
+
     const { data, error } = await supabase
       .from(TABLE)
       .insert(input)
