@@ -7,6 +7,7 @@ import {
   toEnglishDigits,
   resolveGradients,
   categorySortKey,
+  hexToRgba,
   type PosterBrandGroup,
   type PosterLine,
   type PosterSettings,
@@ -517,7 +518,14 @@ function BrandBlock({
                     className="flex items-center justify-between gap-2"
                     style={{
                       padding: '3px 8px',
-                      background: li % 2 === 1 ? '#f8fafc' : '#ffffff',
+                      background: settings.productColors[line.id]
+                        ? hexToRgba(settings.productColors[line.id], 0.18)
+                        : li % 2 === 1
+                          ? '#f8fafc'
+                          : '#ffffff',
+                      borderInlineStart: settings.productColors[line.id]
+                        ? `4px solid ${settings.productColors[line.id]}`
+                        : undefined,
                     }}
                   >
                     <span

@@ -83,6 +83,7 @@ export default function NewsletterPage() {
         settings={settings}
         onChange={setSettings}
         brands={brands}
+        products={products}
         onPrint={handleExportPdf}
         onExportPng={handleExportPng}
         exporting={exporting}

@@ -144,6 +144,7 @@ export interface PosterSettings {
   columns: ColumnSettings;
     logoSize: number;        // حجم شعار bareq.png (الوسط)
   cornerLogoSize: number;  // حجم logo.jpeg (الزاوية اليسرى)
+  productColors: Record<string, string>; // productId -> لون التمييز
 
 }
 
@@ -162,6 +163,11 @@ function rgbToHex(r: number, g: number, b: number): string {
       .toString(16)
       .padStart(2, '0');
   return `#${c(r)}${c(g)}${c(b)}`;
+}
+
+export function hexToRgba(hex: string, alpha: number): string {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 /** amount موجب = تفتيح، سالب = تغميق (من -1 إلى 1) */
@@ -254,6 +260,7 @@ export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
     theme: DEFAULT_THEME,
 
   onlyBrandIds: [],
+  productColors: {},
   invoiceDate: new Date().toISOString().slice(0, 10),
   warranties: [
     warranty('كفالة كسر شاشة', '120 يوم'),

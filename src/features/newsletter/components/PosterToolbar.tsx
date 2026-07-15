@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   MapPin,
   Users,
+  Palette,
+  PaintBucket,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button, Input, Select } from '@/components/ui';
@@ -27,14 +29,14 @@ import {
   type ContactField,
   type ProductFonts,
 } from '@/features/newsletter/lib/poster';
-import type { NewsletterFilterOption } from '@/services/newsletter.service';
-import { /* ... */ Palette } from 'lucide-react';
-import { /* ... */ DEFAULT_THEME } from '@/features/newsletter/lib/poster';
+import type { NewsletterFilterOption, NewsletterProduct } from '@/services/newsletter.service';
+import { DEFAULT_THEME } from '@/features/newsletter/lib/poster';
 
 interface PosterToolbarProps {
   settings: PosterSettings;
   onChange: (s: PosterSettings) => void;
   brands: NewsletterFilterOption[];
+  products: NewsletterProduct[];
   onPrint: () => void;
   onExportPng: () => void;
   exporting: boolean;
@@ -52,7 +54,7 @@ function Accordion({
   action,
   children,
 }: {
-  title: string;
+  title: React.ReactNode;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   defaultOpen?: boolean;
   action?: React.ReactNode;
@@ -85,6 +87,132 @@ function Accordion({
         </div>
       )}
     </div>
+  );
+}
+
+function ProductHighlightSection({
+  products,
+  productColors,
+  onChange,
+}: {
+  products: NewsletterProduct[];
+  productColors: Record<string, string>;
+  onChange: (colors: Record<string, string>) => void;
+}) {
+  const [selectedId, setSelectedId] = useState('');
+  const [selectedColor, setSelectedColor] = useState('#ef4444');
+
+  const addHighlight = () => {
+    if (!selectedId) return;
+    onChange({ ...productColors, [selectedId]: selectedColor });
+    setSelectedId('');
+  };
+
+  const removeHighlight = (id: string) => {
+    const next = { ...productColors };
+    delete next[id];
+    onChange(next);
+  };
+
+  const coloredCount = Object.keys(productColors).length;
+
+  return (
+    <Accordion
+      title={
+        <span>
+          تمييز المنتجات بالألوان
+          {coloredCount > 0 && (
+            <span className="ms-2 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-300">
+              {coloredCount}
+            </span>
+          )}
+        </span>
+      }
+      icon={PaintBucket}
+    >
+      {/* إضافة تلوين جديد */}
+      <div className="mb-3 flex items-end gap-2">
+        <div className="flex-1">
+          <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            اختر منتج
+          </label>
+          <select
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option value="">-- اختر --</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.model || p.name}
+                {p.storage_label ? ` (${p.storage_label})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            اللون
+          </label>
+          <input
+            type="color"
+            value={selectedColor}
+            onChange={(e) => setSelectedColor(e.target.value)}
+            className="h-9 w-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+            style={{ appearance: 'none' }}
+          />
+        </div>
+        <Button
+          variant="secondary"
+          onClick={addHighlight}
+          disabled={!selectedId}
+        >
+          <Plus size={14} />
+          إضافة
+        </Button>
+      </div>
+
+      {/* قائمة المنتجات الملونة */}
+      {coloredCount === 0 ? (
+        <p className="text-xs text-slate-400">
+          لا توجد منتجات ملونة بعد. اختر منتجاً ولوناً أعلاه.
+        </p>
+      ) : (
+        <div className="space-y-1.5">
+          {products
+            .filter((p) => productColors[p.id])
+            .map((p) => {
+              const color = productColors[p.id];
+              return (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2 dark:border-slate-700"
+                  style={{
+                    borderInlineStart: `4px solid ${color}`,
+                  }}
+                >
+                  <span
+                    className="h-4 w-4 shrink-0 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="flex-1 truncate text-sm text-slate-700 dark:text-slate-200">
+                    {p.model || p.name}
+                    {p.storage_label ? ` (${p.storage_label})` : ''}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeHighlight(p.id)}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10"
+                    title="إزالة التلوين"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              );
+            })}
+        </div>
+      )}
+    </Accordion>
   );
 }
 
@@ -248,6 +376,7 @@ export function PosterToolbar({
   settings,
   onChange,
   brands,
+  products,
   onPrint,
   onExportPng,
   exporting,
@@ -891,6 +1020,13 @@ export function PosterToolbar({
             </div>
           </div>
         </Accordion>
+
+        {/* تمييز المنتجات بالألوان */}
+        <ProductHighlightSection
+          products={products}
+          productColors={settings.productColors}
+          onChange={(productColors) => patch({ productColors })}
+        />
 
       </div>
     </div>
