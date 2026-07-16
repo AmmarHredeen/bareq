@@ -24,6 +24,98 @@ const POSTER_WIDTH = 1240;
 const PADDING = 24;
 const COL_GAP = 12;
 
+/* ===================== الأيقونات (SVG مضمّن) ===================== */
+
+type IconProps = {
+  size?: number;
+  color?: string;
+  className?: string;
+};
+
+const PhoneIcon = ({ size = 20, color = 'currentColor', className }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+    style={{ flexShrink: 0 }}
+  >
+    <path
+      d="M6.5 3h3l1.5 4-2 1.5a11 11 0 005 5l1.5-2 4 1.5v3a2 2 0 01-2 2A16 16 0 014.5 5 2 2 0 016.5 3z"
+      fill={color}
+    />
+  </svg>
+);
+
+const CreditCardIcon = ({ size = 20, color = 'currentColor', className }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+    style={{ flexShrink: 0 }}
+  >
+    <rect x="2" y="5" width="20" height="14" rx="2.5" fill={color} opacity="0.9" />
+    <rect x="2" y="8.5" width="20" height="3" fill="#0f172a" opacity="0.35" />
+    <rect x="5" y="14.5" width="6" height="2" rx="1" fill="#0f172a" opacity="0.35" />
+  </svg>
+);
+
+const TruckIcon = ({ size = 20, color = 'currentColor', className }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+    style={{ flexShrink: 0 }}
+  >
+    <path d="M1 6.5A1.5 1.5 0 012.5 5H14a1 1 0 011 1v9H2a1 1 0 01-1-1V6.5z" fill={color} />
+    <path d="M15 9h3.2a1 1 0 01.86.5L21 13v2a1 1 0 01-1 1h-5V9z" fill={color} opacity="0.85" />
+    <circle cx="6" cy="17.5" r="2.2" fill="#0f172a" />
+    <circle cx="17.5" cy="17.5" r="2.2" fill="#0f172a" />
+    <circle cx="6" cy="17.5" r="0.9" fill="#fff" />
+    <circle cx="17.5" cy="17.5" r="0.9" fill="#fff" />
+  </svg>
+);
+
+const PinIcon = ({ size = 20, color = 'currentColor', className }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+    style={{ flexShrink: 0 }}
+  >
+    <path
+      d="M12 2c-3.9 0-7 3.1-7 7 0 5 7 13 7 13s7-8 7-13c0-3.9-3.1-7-7-7z"
+      fill={color}
+    />
+    <circle cx="12" cy="9" r="2.6" fill="#fff" />
+  </svg>
+);
+
+const SparkleIcon = ({ size = 20, color = 'currentColor', className }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    className={className}
+    style={{ flexShrink: 0 }}
+  >
+    <path
+      d="M12 2l2.2 6.4a3 3 0 001.9 1.9L22.5 12l-6.4 1.7a3 3 0 00-1.9 1.9L12 22l-2.2-6.4a3 3 0 00-1.9-1.9L1.5 12l6.4-1.7a3 3 0 001.9-1.9L12 2z"
+      fill={color}
+    />
+  </svg>
+);
+
+/* ===================== المكوّن الرئيسي ===================== */
+
 export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
   function PosterCanvas({ groups, settings }, ref) {
     const { contact, productFonts, theme } = settings;
@@ -294,17 +386,11 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                     {contact.wholesaleDiscount.text}
                   </span>
 
-                  {/* نجمة تسويقية */}
-                  <div
-                    className="flex shrink-0 items-center justify-center font-black"
-                    style={{
-                      fontSize: contact.wholesaleDiscount.fontSize * 1.1,
-                      color: '#fde68a',
-                      lineHeight: 1,
-                    }}
-                  >
-                    ✦
-                  </div>
+                  {/* نجمة تسويقية (SVG) */}
+                  <SparkleIcon
+                    size={contact.wholesaleDiscount.fontSize * 1.2}
+                    color="#fde68a"
+                  />
                 </div>
               </div>
             </div>
@@ -326,13 +412,17 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                 {phones.map((p) => (
                   <div
                     key={p}
-                    className="font-bold tabular-nums"
+                    className="flex items-center gap-2 font-bold tabular-nums"
                     style={{
                       fontSize: contact.phones.fontSize,
                       fontFamily: contact.phones.fontFamily,
                     }}
                   >
-                    📞 {p}
+                    <PhoneIcon
+                      size={contact.phones.fontSize * 1.05}
+                      color="#e0f2fe"
+                    />
+                    <span dir="ltr">{p}</span>
                   </div>
                 ))}
               </div>
@@ -341,6 +431,7 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
               <div className="space-y-1.5 text-center font-semibold">
                 {contact.paymentNote.text && (
                   <div
+                    className="flex items-center justify-center gap-2"
                     style={{
                       background: 'rgba(255,255,255,0.12)',
                       borderRadius: 10,
@@ -349,11 +440,16 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                       fontFamily: contact.paymentNote.fontFamily,
                     }}
                   >
-                    💳 {contact.paymentNote.text}
+                    <CreditCardIcon
+                      size={contact.paymentNote.fontSize * 1.1}
+                      color="#fde68a"
+                    />
+                    <span>{contact.paymentNote.text}</span>
                   </div>
                 )}
                 {contact.deliveryNote.text && (
                   <div
+                    className="flex items-center justify-center gap-2"
                     style={{
                       background: 'rgba(255,255,255,0.12)',
                       borderRadius: 10,
@@ -362,18 +458,26 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                       fontFamily: contact.deliveryNote.fontFamily,
                     }}
                   >
-                    🚚 {contact.deliveryNote.text}
+                    <TruckIcon
+                      size={contact.deliveryNote.fontSize * 1.1}
+                      color="#bbf7d0"
+                    />
+                    <span>{contact.deliveryNote.text}</span>
                   </div>
                 )}
                 {contact.address.text && (
                   <div
-                    className="opacity-90"
+                    className="flex items-center justify-center gap-2 opacity-90"
                     style={{
                       fontSize: contact.address.fontSize,
                       fontFamily: contact.address.fontFamily,
                     }}
                   >
-                    📍 {contact.address.text}
+                    <PinIcon
+                      size={contact.address.fontSize * 1.1}
+                      color="#fecaca"
+                    />
+                    <span>{contact.address.text}</span>
                   </div>
                 )}
                 {contact.complaints.text && (
@@ -420,6 +524,8 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
     );
   }
 );
+
+/* ===================== بلوك العلامة التجارية ===================== */
 
 function BrandBlock({
   group,
