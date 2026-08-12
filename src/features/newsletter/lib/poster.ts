@@ -305,16 +305,96 @@ export interface PosterBrandGroup {
   lines: PosterLine[];
 }
 
-export const CATEGORY_ORDER: Record<string, number> = {
-  'جوال': 0,
-  'تابلت': 1,
-  'ساعات': 2,
-  'اكسسوارات': 3,
-};
+/**
+ * ترتيب الفئات وتسمياتها في النشرة.
+ * المطابقة تتم على اسم مُطبَّع، وكل فئة لها مرادفات بالعربية والإنجليزية —
+ * فلا يتوقف الترتيب على تهجئة بعينها في قاعدة البيانات.
+ */
+export const CATEGORY_DEFS: {
+  order: number;
+  label: string;
+  aliases: string[];
+}[] = [
+  {
+    order: 0,
+    label: 'Smartphone',
+    aliases: [
+      'smartphone',
+      'smart phone',
+      'phone',
+      'phones',
+      'mobile',
+      'mobiles',
+      'جوال',
+      'جوالات',
+      'موبايل',
+      'هاتف',
+      'هواتف',
+    ],
+  },
+  {
+    order: 1,
+    label: 'Tablet',
+    aliases: ['tablet', 'tablets', 'تابلت', 'تابلیت', 'لوحي', 'ايباد'],
+  },
+  {
+    order: 2,
+    label: 'Smart Watch',
+    aliases: [
+      'smart watch',
+      'smartwatch',
+      'watch',
+      'watches',
+      'ساعات',
+      'ساعه',
+      'ساعه ذكيه',
+      'ساعات ذكيه',
+    ],
+  },
+  {
+    order: 3,
+    label: 'Accessories',
+    aliases: ['accessories', 'accessory', 'اكسسوارات', 'اكسسوار', 'ملحقات'],
+  },
+];
 
+/** يوحّد الاسم: مسافات، حالة الأحرف، وصور الألف/الهاء/الياء العربية. */
+export function normalizeCategory(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[أإآٱ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/ـ/g, '') // التطويل (ـ)
+    .normalize('NFD')
+    .replace(/\p{Mn}/gu, '') // علامات التشكيل
+    .replace(/\s+/g, ' ');
+}
+
+const CATEGORY_INDEX = new Map<string, { order: number; label: string }>();
+for (const def of CATEGORY_DEFS) {
+  for (const alias of def.aliases) {
+    CATEGORY_INDEX.set(normalizeCategory(alias), {
+      order: def.order,
+      label: def.label,
+    });
+  }
+}
+
+function lookupCategory(name: string | null) {
+  if (!name) return undefined;
+  return CATEGORY_INDEX.get(normalizeCategory(name));
+}
+
+/** الفئات غير المعروفة تأتي بعد المعروفة كلها. */
 export function categorySortKey(name: string | null): number {
-  if (!name) return 99;
-  return CATEGORY_ORDER[name] ?? 99;
+  return lookupCategory(name)?.order ?? 99;
+}
+
+/** أي فئة خارج الجدول تُعرض باسمها كما هو في قاعدة البيانات. */
+export function categoryLabel(name: string): string {
+  return lookupCategory(name)?.label ?? name.trim();
 }
 
 export function buildSpec(p: NewsletterProduct): string {
@@ -363,6 +443,16 @@ export function compareLines(
   const catDiff =
     categorySortKey(a.categoryName) - categorySortKey(b.categoryName);
   if (catDiff !== 0) return catDiff;
+
+  // فئتان مختلفتان بنفس الأولوية (غير معروفتين): رتّبهما أبجدياً
+  // كي تبقيا مجمّعتين بترتيب ثابت بدل أن تتبعثرا حسب السعر.
+  if (a.categoryName !== b.categoryName) {
+    const byCategory = (a.categoryName ?? '').localeCompare(
+      b.categoryName ?? '',
+      'ar'
+    );
+    if (byCategory !== 0) return byCategory;
+  }
 
   const dir = sort.direction === 'desc' ? -1 : 1;
 
@@ -426,6 +516,7 @@ export function estimateColumnWidth(
   let maxNameLen = 0;
   let maxStorageLen = 0;
   let maxBrandLen = 0;
+  let maxCategoryLen = 0;
 
   for (const g of groups) {
     maxBrandLen = Math.max(maxBrandLen, g.brandName.length);
@@ -435,6 +526,12 @@ export function estimateColumnWidth(
         maxStorageLen,
         line.storage ? toEnglishDigits(line.storage).length : 0
       );
+      if (line.categoryName) {
+        maxCategoryLen = Math.max(
+          maxCategoryLen,
+          categoryLabel(line.categoryName).length
+        );
+      }
     }
   }
 
@@ -444,8 +541,15 @@ export function estimateColumnWidth(
   // 6 خانات للرقم + مسافة ورمز العملة
   const priceW = (6 + 2) * productFonts.price * CHAR;
   const brandW = maxBrandLen * productFonts.brandTitle * CHAR;
+  // عنوان الفئة: حروف كبيرة + تباعد أحرف (~25% زيادة) + مساحة الخطّين الجانبيين
+  const categoryW =
+    maxCategoryLen * productFonts.categoryLabel * CHAR * 1.25 + 44;
 
-  const contentW = Math.max(nameW + storageW + priceW + 34, brandW + 20);
+  const contentW = Math.max(
+    nameW + storageW + priceW + 34,
+    brandW + 20,
+    categoryW
+  );
   return Math.ceil(contentW);
 }
 

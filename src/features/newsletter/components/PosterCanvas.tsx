@@ -7,6 +7,7 @@ import {
   toEnglishDigits,
   resolveGradients,
   categorySortKey,
+  categoryLabel,
   hexToRgba,
   type PosterBrandGroup,
   type PosterLine,
@@ -600,21 +601,52 @@ function BrandBlock({
 
       <div>
         {[...categoryGroups.entries()]
-          .sort(([a], [b]) => categorySortKey(a) - categorySortKey(b))
+          .sort(
+            ([a], [b]) =>
+              categorySortKey(a) - categorySortKey(b) ||
+              a.localeCompare(b, 'ar')
+          )
           .map(([catName, lines], ci) => (
             <div key={catName}>
-              {catName !== 'جوال' && catName !== 'أخرى' && (
+              {catName !== 'أخرى' && (
                 <div
-                  className="font-bold uppercase tracking-wide"
+                  className="flex items-center"
                   style={{
-                    fontSize: productFonts.categoryLabel,
-                    color: '#0284c7',
+                    gap: 6,
                     background: '#f0f9ff',
-                    padding: '2px 8px',
-                    borderTop: ci > 0 ? '1px dashed #bae6fd' : 'none',
+                    padding: '4px 8px',
+                    borderTop: ci > 0 ? '1px solid #e0f2fe' : 'none',
                   }}
                 >
-                  {catName}
+                  <span
+                    style={{
+                      flex: 1,
+                      height: 1,
+                      background:
+                        'linear-gradient(to left, #7dd3fc, transparent)',
+                    }}
+                  />
+                  <span
+                    dir="ltr"
+                    className="font-extrabold uppercase"
+                    style={{
+                      fontSize: productFonts.categoryLabel,
+                      color: '#0284c7',
+                      letterSpacing: '0.09em',
+                      whiteSpace: 'nowrap',
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {categoryLabel(catName)}
+                  </span>
+                  <span
+                    style={{
+                      flex: 1,
+                      height: 1,
+                      background:
+                        'linear-gradient(to right, #7dd3fc, transparent)',
+                    }}
+                  />
                 </div>
               )}
               <div>
