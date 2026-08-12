@@ -4,6 +4,7 @@ import {
   DEFAULT_CONTACT,
   DEFAULT_PRODUCT_FONTS,
   DEFAULT_COLUMNS,
+  DEFAULT_SORT,
   type PosterSettings,
   DEFAULT_THEME,
 } from '@/features/newsletter/lib/poster';
@@ -23,6 +24,7 @@ function loadSettings(): PosterSettings {
       contact: { ...DEFAULT_CONTACT, ...(parsed.contact ?? {}) },
       productFonts: { ...DEFAULT_PRODUCT_FONTS, ...(parsed.productFonts ?? {}) },
       columns: { ...DEFAULT_COLUMNS, ...(parsed.columns ?? {}) },
+      sort: { ...DEFAULT_SORT, ...(parsed.sort ?? {}) },
       theme: { ...DEFAULT_THEME, ...(parsed.theme ?? {}) },
 
     };

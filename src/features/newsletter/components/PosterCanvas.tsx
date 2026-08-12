@@ -636,6 +636,7 @@ function BrandBlock({
                   >
                     <span
                       className="font-black tabular-nums"
+                      dir="ltr"
                       style={{
                         fontSize: productFonts.price,
                         color: '#1d4ed8',

@@ -13,6 +13,7 @@ import {
   exportPosterAsPdf,
   buildFileName,
 } from '@/features/newsletter/lib/exportImage';
+import { exportPosterAsExcel } from '@/features/newsletter/lib/exportExcel';
 
 export default function NewsletterPage() {
   const { data, isLoading } = useNewsletter();
@@ -60,6 +61,23 @@ export default function NewsletterPage() {
     }
   };
 
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      await exportPosterAsExcel(
+        groups,
+        settings,
+        buildFileName('list', 'xlsx')
+      );
+      toast.success('تم تصدير ملف Excel بنجاح');
+    } catch (err) {
+      console.error(err);
+      toast.error('فشل تصدير Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="animate-fade-in space-y-6">
       <div className="no-print flex items-center gap-3">
@@ -86,6 +104,7 @@ export default function NewsletterPage() {
         products={products}
         onPrint={handleExportPdf}
         onExportPng={handleExportPng}
+        onExportExcel={handleExportExcel}
         exporting={exporting}
       />
 

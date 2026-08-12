@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Printer,
   ImageDown,
+  FileSpreadsheet,
   Plus,
   Trash2,
   Columns3,
@@ -28,6 +29,8 @@ import {
   type ContactInfo,
   type ContactField,
   type ProductFonts,
+  type SortField,
+  type SortDirection,
 } from '@/features/newsletter/lib/poster';
 import type { NewsletterFilterOption, NewsletterProduct } from '@/services/newsletter.service';
 import { DEFAULT_THEME } from '@/features/newsletter/lib/poster';
@@ -39,6 +42,7 @@ interface PosterToolbarProps {
   products: NewsletterProduct[];
   onPrint: () => void;
   onExportPng: () => void;
+  onExportExcel: () => void;
   exporting: boolean;
 }
 
@@ -379,6 +383,7 @@ export function PosterToolbar({
   products,
   onPrint,
   onExportPng,
+  onExportExcel,
   exporting,
 }: PosterToolbarProps) {
   const patch = (p: Partial<PosterSettings>) => onChange({ ...settings, ...p });
@@ -520,12 +525,51 @@ export function PosterToolbar({
           )}
         </div>
 
+        <div className="flex min-w-[220px] flex-1 items-center gap-2">
+          <Select
+            value={settings.sort.field}
+            options={[
+              { value: 'price', label: 'ترتيب: السعر' },
+              { value: 'name', label: 'ترتيب: الاسم' },
+            ]}
+            onChange={(e) =>
+              patch({
+                sort: { ...settings.sort, field: e.target.value as SortField },
+              })
+            }
+          />
+          <Select
+            value={settings.sort.direction}
+            options={[
+              { value: 'asc', label: 'تصاعدي ↑' },
+              { value: 'desc', label: 'تنازلي ↓' },
+            ]}
+            onChange={(e) =>
+              patch({
+                sort: {
+                  ...settings.sort,
+                  direction: e.target.value as SortDirection,
+                },
+              })
+            }
+          />
+        </div>
+
         <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            onClick={onExportExcel}
+            disabled={exporting}
+            className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500/25"
+          >
+            <FileSpreadsheet size={16} />
+            {exporting ? '…' : 'Excel'}
+          </Button>
           <Button variant="secondary" onClick={onExportPng} disabled={exporting}>
             <ImageDown size={16} />
             {exporting ? '…' : 'PNG'}
           </Button>
-          <Button onClick={onPrint}>
+          <Button onClick={onPrint} disabled={exporting}>
             <Printer size={16} />
             PDF
           </Button>

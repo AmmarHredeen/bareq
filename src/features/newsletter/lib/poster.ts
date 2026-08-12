@@ -132,6 +132,15 @@ export interface ColumnSettings {
   manual: number;
 }
 
+/** حقل فرز منتجات البراند داخل كل فئة. */
+export type SortField = 'price' | 'name';
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortSettings {
+  field: SortField;
+  direction: SortDirection;
+}
+
 export interface PosterSettings {
     theme: PosterTheme;
   mode: PosterMode;
@@ -142,6 +151,7 @@ export interface PosterSettings {
   contact: ContactInfo;
   productFonts: ProductFonts;
   columns: ColumnSettings;
+  sort: SortSettings;
     logoSize: number;        // حجم شعار bareq.png (الوسط)
   cornerLogoSize: number;  // حجم logo.jpeg (الزاوية اليسرى)
   productColors: Record<string, string>; // productId -> لون التمييز
@@ -241,6 +251,11 @@ export const DEFAULT_COLUMNS: ColumnSettings = {
   manual: 6,
 };
 
+export const DEFAULT_SORT: SortSettings = {
+  field: 'price',
+  direction: 'asc',
+};
+
 function warranty(name: string, duration: string): WarrantyItem {
   return {
     id: genId(),
@@ -271,6 +286,7 @@ export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
   contact: DEFAULT_CONTACT,
   productFonts: DEFAULT_PRODUCT_FONTS,
   columns: DEFAULT_COLUMNS,
+  sort: DEFAULT_SORT,
 };
 
 export interface PosterLine {
@@ -312,11 +328,14 @@ function rawPrice(p: NewsletterProduct, mode: PosterMode): number | null {
   return mode === 'wholesale' ? p.wholesale_price : p.price;
 }
 
+export const CURRENCY_SYMBOL = '$';
+
 export function formatPosterPrice(price: number | null): string {
   if (price == null) return '—';
-  return new Intl.NumberFormat('en-US', {
+  const value = new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2,
   }).format(price);
+  return `${value} ${CURRENCY_SYMBOL}`;
 }
 
 /**
@@ -331,11 +350,38 @@ export function warrantiesForBrand(
   );
 }
 
+/**
+ * ترتيب منتجَين داخل بلوك البراند:
+ * الفئة أولاً (ثابتة دائماً)، ثم حقل الفرز المختار بالاتجاه المختار.
+ * المنتجات بلا سعر تبقى في آخر فئتها في الاتجاهين.
+ */
+export function compareLines(
+  a: PosterLine,
+  b: PosterLine,
+  sort: SortSettings
+): number {
+  const catDiff =
+    categorySortKey(a.categoryName) - categorySortKey(b.categoryName);
+  if (catDiff !== 0) return catDiff;
+
+  const dir = sort.direction === 'desc' ? -1 : 1;
+
+  if (sort.field === 'name') {
+    return a.name.localeCompare(b.name, 'ar', { numeric: true }) * dir;
+  }
+
+  // السعر: القيم الفارغة دائماً في الآخر — قبل تطبيق الاتجاه
+  if (a.price == null && b.price == null) return 0;
+  if (a.price == null) return 1;
+  if (b.price == null) return -1;
+  return (a.price - b.price) * dir;
+}
+
 export function buildPoster(
   products: NewsletterProduct[],
   settings: PosterSettings
 ): PosterBrandGroup[] {
-  const { mode, onlyBrandIds } = settings;
+  const { mode, onlyBrandIds, sort } = settings;
   const groups = new Map<string, PosterBrandGroup>();
 
   for (const p of products) {
@@ -367,12 +413,7 @@ export function buildPoster(
 
   const result = [...groups.values()];
   for (const g of result) {
-    g.lines.sort((a, b) => {
-      const catDiff =
-        categorySortKey(a.categoryName) - categorySortKey(b.categoryName);
-      if (catDiff !== 0) return catDiff;
-      return (a.price ?? Infinity) - (b.price ?? Infinity);
-    });
+    g.lines.sort((a, b) => compareLines(a, b, sort));
   }
   result.sort((a, b) => b.lines.length - a.lines.length);
   return result;
@@ -400,7 +441,8 @@ export function estimateColumnWidth(
   const CHAR = 0.58;
   const nameW = maxNameLen * productFonts.productName * CHAR;
   const storageW = maxStorageLen * productFonts.productStorage * CHAR;
-  const priceW = 6 * productFonts.price * CHAR;
+  // 6 خانات للرقم + مسافة ورمز العملة
+  const priceW = (6 + 2) * productFonts.price * CHAR;
   const brandW = maxBrandLen * productFonts.brandTitle * CHAR;
 
   const contentW = Math.max(nameW + storageW + priceW + 34, brandW + 20);
