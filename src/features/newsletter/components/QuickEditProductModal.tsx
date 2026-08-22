@@ -3,7 +3,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Megaphone, Smartphone } from 'lucide-react';
 import { Button, Input, Modal } from '@/components/ui';
 import { cn } from '@/utils/cn';
-import { productDisplayName } from '@/utils/productName';
 import {
   quickEditSchema,
   type QuickEditValues,
@@ -97,9 +96,7 @@ function QuickEditForm({
   } = useForm<QuickEditValues>({
     resolver: zodResolver(quickEditSchema),
     defaultValues: {
-      // نبدأ من الاسم المعروض فعلاً في النشرة (model القديم إن وُجد)،
-      // والحفظ يوحّده في name ويفرّغ model.
-      name: productDisplayName(product),
+      name: product.name,
       price: product.price ?? 0,
       wholesale_price: product.wholesale_price ?? 0,
       show_in_newsletter: product.show_in_newsletter,

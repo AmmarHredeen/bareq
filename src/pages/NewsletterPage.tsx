@@ -37,8 +37,7 @@ export default function NewsletterPage() {
   const handleQuickEditSubmit = (values: QuickEditValues) => {
     if (!editingId) return;
     patch.mutate(
-      // model حقل قديم مكرّر للاسم — نفرّغه فيبقى name المصدر الوحيد
-      { id: editingId, input: { ...values, model: null } },
+      { id: editingId, input: values },
       { onSuccess: () => setEditingId(null) }
     );
   };

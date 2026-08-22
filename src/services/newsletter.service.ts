@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 export interface NewsletterProduct {
   id: string;
   name: string;
-  model: string | null;
   price: number | null;
   wholesale_price: number | null;
   brand_id: string | null;
@@ -31,7 +30,6 @@ export interface NewsletterData {
 interface RawProductRow {
   id: string;
   name: string;
-  model: string | null;
   price: number | null;
   wholesale_price: number | null;
   brand_id: string | null;
@@ -50,7 +48,7 @@ async getAll(): Promise<NewsletterData> {
     .from('products')
     .select(
       `
-      id, name, model, price, wholesale_price, brand_id, category_id,
+      id, name, price, wholesale_price, brand_id, category_id,
       show_in_app, show_in_newsletter,
       brand:brands!inner(name, show_in_newsletter, is_active),
       category:categories!inner(name, show_in_newsletter, is_active),
@@ -76,7 +74,6 @@ async getAll(): Promise<NewsletterData> {
   const products: NewsletterProduct[] = rows.map((p) => ({
     id: p.id,
     name: p.name,
-    model: p.model,
     price: p.price,
     wholesale_price: p.wholesale_price,
     brand_id: p.brand_id,

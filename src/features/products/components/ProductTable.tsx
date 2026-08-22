@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui';
 import { formatCurrency } from '@/utils/format';
 import { PRODUCT_STATUS_META, PRODUCT_STATUS_FALLBACK } from '@/constants/app';
 import { cn } from '@/utils/cn';
-import { productDisplayName } from '@/utils/productName';
 import type { ProductWithRelations } from '@/types/entities.types';
 
 interface ProductTableProps {
@@ -42,7 +41,7 @@ const statusMeta = PRODUCT_STATUS_META[product.status] ?? PRODUCT_STATUS_FALLBAC
                       <Smartphone className="h-4.5 w-4.5" />
                     </span>
                     <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {productDisplayName(product)}
+                      {product.name}
                     </span>
                   </div>
                 </td>

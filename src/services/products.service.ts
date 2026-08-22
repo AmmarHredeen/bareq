@@ -19,8 +19,6 @@ const SELECT_WITH_RELATIONS = `
 
 export interface ProductInput {
   name: string;
-  /** الاسم المعروض في النشرة — يُستخدم بدل name عند وجوده. */
-  model?: string | null;
   category_id: string;
   brand_id: string;
   storage_option_id: string;
@@ -86,7 +84,7 @@ export const productsService = {
         // بحث في الاسم/الموديل
     if (search.trim()) {
       const s = search.trim();
-      query = query.or(`name.ilike.%${s}%,model.ilike.%${s}%`);
+      query = query.ilike('name', `%${s}%`);
     }
 
 
