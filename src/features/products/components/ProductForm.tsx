@@ -9,6 +9,7 @@ import { useProductOptions } from '../hooks/useProductOptions';
 import { Input, Textarea, Select, Button, Spinner } from '@/components/ui';
 import { PRODUCT_STATUS_OPTIONS } from '@/constants/app';
 import { cn } from '@/utils/cn';
+import { productDisplayName } from '@/utils/productName';
 import type { Product } from '@/types/entities.types';
 
 interface ProductFormProps {
@@ -43,7 +44,8 @@ export function ProductForm({
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: initialData?.name ?? '',
+      // نبدأ من الاسم المعروض (model القديم إن وُجد) والحفظ يوحّده في name
+      name: initialData ? productDisplayName(initialData) : '',
       category_id: initialData?.category_id ?? '',
       brand_id: initialData?.brand_id ?? '',
       storage_option_id: initialData?.storage_option_id ?? '',

@@ -16,6 +16,7 @@ import {
   PaintBucket,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { productDisplayName } from '@/utils/productName';
 import { Button, Input, Select } from '@/components/ui';
 import {
   genId,
@@ -148,7 +149,7 @@ function ProductHighlightSection({
             <option value="">-- اختر --</option>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.model || p.name}
+                {productDisplayName(p)}
                 {p.storage_label ? ` (${p.storage_label})` : ''}
               </option>
             ))}
@@ -200,7 +201,7 @@ function ProductHighlightSection({
                     style={{ backgroundColor: color }}
                   />
                   <span className="flex-1 truncate text-sm text-slate-700 dark:text-slate-200">
-                    {p.model || p.name}
+                    {productDisplayName(p)}
                     {p.storage_label ? ` (${p.storage_label})` : ''}
                   </span>
                   <button

@@ -241,6 +241,22 @@
   display: none;
 }
 
+/* ===== سطر منتج قابل للنقر في النشرة =====
+   التمييز مكتوب كصنف CSS لا كنمط مضمّن، لأن html2canvas يرسم الأنماط
+   المحسوبة بلا حالة تحويم أو تركيز — فلا يتسرّب شيء إلى PNG أو PDF. */
+.poster-row-clickable {
+  cursor: pointer;
+}
+
+.poster-row-clickable:hover {
+  box-shadow: inset 0 0 0 2px #38bdf8;
+}
+
+.poster-row-clickable:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: -2px;
+}
+
 
 /* ===== طباعة النشرة ===== */
 @media print {

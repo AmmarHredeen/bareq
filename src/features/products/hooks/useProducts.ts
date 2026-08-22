@@ -54,6 +54,17 @@ export function useProductMutations() {
     onError: () => toast.error('فشل تحديث المنتج'),
   });
 
+  /** تحديث جزئي — يُستخدم في التعديل السريع من النشرة. */
+  const patch = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<ProductInput> }) =>
+      productsService.patch(id, input),
+    onSuccess: () => {
+      toast.success('تم تحديث المنتج بنجاح');
+      invalidate();
+    },
+    onError: () => toast.error('فشل تحديث المنتج'),
+  });
+
   const remove = useMutation({
     mutationFn: (id: string) => productsService.remove(id),
     onSuccess: () => {
@@ -63,5 +74,5 @@ export function useProductMutations() {
     onError: () => toast.error('فشل حذف المنتج'),
   });
 
-  return { create, update, remove };
+  return { create, update, patch, remove };
 }

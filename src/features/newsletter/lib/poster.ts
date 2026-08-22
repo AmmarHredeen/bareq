@@ -1,4 +1,5 @@
 import type { NewsletterProduct } from '@/services/newsletter.service';
+import { productDisplayName } from '@/utils/productName';
 
 export type PosterMode = 'retail' | 'wholesale';
 
@@ -399,7 +400,7 @@ export function categoryLabel(name: string): string {
 
 export function buildSpec(p: NewsletterProduct): string {
   const parts: string[] = [];
-  parts.push(p.model?.trim() || p.name.trim());
+  parts.push(productDisplayName(p));
   if (p.storage_label?.trim()) parts.push(p.storage_label.trim());
   return parts.join(' ');
 }
@@ -491,7 +492,7 @@ export function buildPoster(
     group.lines.push({
       id: p.id,
       spec: buildSpec(p),
-      name: p.model?.trim() || p.name.trim(),
+      name: productDisplayName(p),
       storage: p.storage_label?.trim() || null,
       price,
       categoryId: p.category_id,

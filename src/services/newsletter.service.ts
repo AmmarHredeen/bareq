@@ -12,6 +12,9 @@ export interface NewsletterProduct {
   brand_name: string | null;
   category_name: string | null;
   storage_label: string | null;
+  /** يلزمان للتعديل السريع من داخل النشرة. */
+  show_in_app: boolean;
+  show_in_newsletter: boolean;
 }
 
 export interface NewsletterFilterOption {
@@ -33,6 +36,8 @@ interface RawProductRow {
   wholesale_price: number | null;
   brand_id: string | null;
   category_id: string | null;
+  show_in_app: boolean;
+  show_in_newsletter: boolean;
   brand: { name: string; show_in_newsletter: boolean; is_active: boolean } | null;
   category: { name: string; show_in_newsletter: boolean; is_active: boolean } | null;
   storage_option: { label: string } | null;
@@ -46,6 +51,7 @@ async getAll(): Promise<NewsletterData> {
     .select(
       `
       id, name, model, price, wholesale_price, brand_id, category_id,
+      show_in_app, show_in_newsletter,
       brand:brands!inner(name, show_in_newsletter, is_active),
       category:categories!inner(name, show_in_newsletter, is_active),
       storage_option:storage_options(label)
@@ -78,6 +84,8 @@ async getAll(): Promise<NewsletterData> {
     brand_name: p.brand?.name ?? null,
     category_name: p.category?.name ?? null,
     storage_label: p.storage_option?.label ?? null,
+    show_in_app: p.show_in_app,
+    show_in_newsletter: p.show_in_newsletter,
   }));
 
   const brandMap = new Map<string, string>();

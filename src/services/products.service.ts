@@ -19,6 +19,8 @@ const SELECT_WITH_RELATIONS = `
 
 export interface ProductInput {
   name: string;
+  /** الاسم المعروض في النشرة — يُستخدم بدل name عند وجوده. */
+  model?: string | null;
   category_id: string;
   brand_id: string;
   storage_option_id: string;
@@ -38,6 +40,20 @@ export interface ProductFilters extends QueryParams {
   show_in_app?: boolean;
   /** true = يعرض فقط ما يظهر في النشرة (وحالته نشط) */
   show_in_newsletter?: boolean;
+}
+
+async function patchRow(
+  id: string,
+  input: Partial<ProductInput>
+): Promise<Product> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update(input)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
 
 export const productsService = {
@@ -127,14 +143,12 @@ export const productsService = {
   },
 
   async update(id: string, input: ProductInput): Promise<Product> {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .update(input)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+    return patchRow(id, input);
+  },
+
+  /** تحديث جزئي — للتعديل السريع من النشرة. */
+  async patch(id: string, input: Partial<ProductInput>): Promise<Product> {
+    return patchRow(id, input);
   },
 
   /** حذف ناعم (soft delete) — لا يُحذف فعلياً. */

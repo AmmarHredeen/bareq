@@ -13,6 +13,9 @@ import {
   exportPosterAsPdf,
   buildFileName,
 } from '@/features/newsletter/lib/exportImage';
+import { QuickEditProductModal } from '@/features/newsletter/components/QuickEditProductModal';
+import { useProductMutations } from '@/features/products/hooks/useProducts';
+import type { QuickEditValues } from '@/features/newsletter/schemas/quickEdit.schema';
 import { exportPosterAsExcel } from '@/features/newsletter/lib/exportExcel';
 
 export default function NewsletterPage() {
@@ -23,8 +26,22 @@ export default function NewsletterPage() {
   const { settings, setSettings } = usePersistentSettings();
 
   const [exporting, setExporting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const posterRef = useRef<HTMLDivElement>(null);
+  const { patch } = useProductMutations();
+
+  const editingProduct =
+    products.find((p) => p.id === editingId) ?? null;
+
+  const handleQuickEditSubmit = (values: QuickEditValues) => {
+    if (!editingId) return;
+    patch.mutate(
+      // model حقل قديم مكرّر للاسم — نفرّغه فيبقى name المصدر الوحيد
+      { id: editingId, input: { ...values, model: null } },
+      { onSuccess: () => setEditingId(null) }
+    );
+  };
 
   const groups = useMemo(
     () => buildPoster(products, settings),
@@ -126,9 +143,17 @@ export default function NewsletterPage() {
             groups={groups}
             settings={settings}
             allBrands={brands}
+            onProductClick={setEditingId}
           />
         </div>
       )}
+
+      <QuickEditProductModal
+        product={editingProduct}
+        onClose={() => setEditingId(null)}
+        onSubmit={handleQuickEditSubmit}
+        isLoading={patch.isPending}
+      />
     </div>
   );
 }

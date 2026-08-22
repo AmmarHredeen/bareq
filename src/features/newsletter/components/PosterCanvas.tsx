@@ -14,11 +14,14 @@ import {
   type PosterSettings,
 } from '@/features/newsletter/lib/poster';
 import type { NewsletterFilterOption } from '@/services/newsletter.service';
+import { cn } from '@/utils/cn';
 
 interface PosterCanvasProps {
   groups: PosterBrandGroup[];
   settings: PosterSettings;
   allBrands: NewsletterFilterOption[];
+  /** اختيارية — بدونها تبقى النشرة غير تفاعلية (كما في سياق التصدير البحت). */
+  onProductClick?: (productId: string) => void;
 }
 
 const POSTER_WIDTH = 1240;
@@ -118,7 +121,7 @@ const SparkleIcon = ({ size = 20, color = 'currentColor', className }: IconProps
 /* ===================== المكوّن الرئيسي ===================== */
 
 export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
-  function PosterCanvas({ groups, settings }, ref) {
+  function PosterCanvas({ groups, settings, onProductClick }, ref) {
     const { contact, productFonts, theme } = settings;
     const gradients = resolveGradients(theme);
 
@@ -327,6 +330,7 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                     group={group}
                     settings={settings}
                     brandGradient={gradients.brand}
+                    onProductClick={onProductClick}
                   />
                 ))}
               </div>
@@ -532,10 +536,12 @@ function BrandBlock({
   group,
   settings,
   brandGradient,
+  onProductClick,
 }: {
   group: PosterBrandGroup;
   settings: PosterSettings;
   brandGradient: { from: string; to: string };
+  onProductClick?: (productId: string) => void;
 }) {
   const { productFonts } = settings;
 
@@ -653,7 +659,28 @@ function BrandBlock({
                 {lines.map((line, li) => (
                   <div
                     key={line.id}
-                    className="flex items-center justify-between gap-2"
+                    className={cn(
+                      'flex items-center justify-between gap-2',
+                      onProductClick && 'poster-row-clickable'
+                    )}
+                    role={onProductClick ? 'button' : undefined}
+                    tabIndex={onProductClick ? 0 : undefined}
+                    title={onProductClick ? 'انقر للتعديل السريع' : undefined}
+                    onClick={
+                      onProductClick
+                        ? () => onProductClick(line.id)
+                        : undefined
+                    }
+                    onKeyDown={
+                      onProductClick
+                        ? (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onProductClick(line.id);
+                            }
+                          }
+                        : undefined
+                    }
                     style={{
                       padding: '3px 8px',
                       background: settings.productColors[line.id]

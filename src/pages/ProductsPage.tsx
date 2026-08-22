@@ -91,6 +91,8 @@ export function ProductsPage() {
     const isActive = values.status === 'active';
     const input = {
       name: values.name,
+      // model حقل قديم مكرّر للاسم — نفرّغه فيبقى name المصدر الوحيد
+      model: null,
       category_id: values.category_id,
       brand_id: values.brand_id,
       storage_option_id: values.storage_option_id,
