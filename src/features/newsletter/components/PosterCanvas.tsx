@@ -1,4 +1,4 @@
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, useMemo, useState } from 'react';
 import {
   distributeIntoColumns,
   computeColumnCount,
@@ -9,6 +9,7 @@ import {
   categorySortKey,
   categoryLabel,
   hexToRgba,
+  moveWithin,
   type PosterBrandGroup,
   type PosterLine,
   type PosterSettings,
@@ -22,6 +23,12 @@ interface PosterCanvasProps {
   allBrands: NewsletterFilterOption[];
   /** اختيارية — بدونها تبقى النشرة غير تفاعلية (كما في سياق التصدير البحت). */
   onProductClick?: (productId: string) => void;
+  /** إعادة ترتيب منتجات فئة واحدة داخل براند واحد بالسحب. */
+  onReorder?: (
+    brandId: string,
+    categoryName: string | null,
+    orderedIds: string[]
+  ) => void;
 }
 
 const POSTER_WIDTH = 1240;
@@ -118,10 +125,22 @@ const SparkleIcon = ({ size = 20, color = 'currentColor', className }: IconProps
   </svg>
 );
 
+/** مقبض السحب — ست نقاط صغيرة تتّسع لحشوة السطر بلا إزاحة. */
+const GripIcon = () => (
+  <svg width="6" height="14" viewBox="0 0 6 14" fill="#94a3b8" aria-hidden="true">
+    <circle cx="1.5" cy="3" r="1.1" />
+    <circle cx="4.5" cy="3" r="1.1" />
+    <circle cx="1.5" cy="7" r="1.1" />
+    <circle cx="4.5" cy="7" r="1.1" />
+    <circle cx="1.5" cy="11" r="1.1" />
+    <circle cx="4.5" cy="11" r="1.1" />
+  </svg>
+);
+
 /* ===================== المكوّن الرئيسي ===================== */
 
 export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
-  function PosterCanvas({ groups, settings, onProductClick }, ref) {
+  function PosterCanvas({ groups, settings, onProductClick, onReorder }, ref) {
     const { contact, productFonts, theme } = settings;
     const gradients = resolveGradients(theme);
 
@@ -331,6 +350,7 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                     settings={settings}
                     brandGradient={gradients.brand}
                     onProductClick={onProductClick}
+                    onReorder={onReorder}
                   />
                 ))}
               </div>
@@ -537,13 +557,22 @@ function BrandBlock({
   settings,
   brandGradient,
   onProductClick,
+  onReorder,
 }: {
   group: PosterBrandGroup;
   settings: PosterSettings;
   brandGradient: { from: string; to: string };
   onProductClick?: (productId: string) => void;
+  onReorder?: (
+    brandId: string,
+    categoryName: string | null,
+    orderedIds: string[]
+  ) => void;
 }) {
   const { productFonts } = settings;
+  // حالة السحب محلية للبلوك: الإفلات مسموح داخل نفس البراند والفئة فقط
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const brandWarranties = warrantiesForBrand(settings.warranties, group.brandId);
 
@@ -656,16 +685,62 @@ function BrandBlock({
                 </div>
               )}
               <div>
-                {lines.map((line, li) => (
+                {lines.map((line, li) => {
+                  // موضع الإسقاط الفعلي: أسفل الهدف عند السحب لأسفل وأعلاه
+                  // عند السحب لأعلى — مطابق لما تفعله moveWithin.
+                  const fromIdx = dragId
+                    ? lines.findIndex((l) => l.id === dragId)
+                    : -1;
+                  const isTarget =
+                    overId === line.id && fromIdx >= 0 && dragId !== line.id;
+
+                  return (
                   <div
                     key={line.id}
                     className={cn(
                       'flex items-center justify-between gap-2',
-                      onProductClick && 'poster-row-clickable'
+                      onProductClick && 'poster-row-clickable',
+                      dragId === line.id && 'poster-row-dragging',
+                      isTarget &&
+                        (fromIdx < li
+                          ? 'poster-row-drop-after'
+                          : 'poster-row-drop-before'),
+                      onReorder && 'poster-row-reorderable'
                     )}
                     role={onProductClick ? 'button' : undefined}
                     tabIndex={onProductClick ? 0 : undefined}
                     title={onProductClick ? 'انقر للتعديل السريع' : undefined}
+                    onDragOver={
+                      onReorder
+                        ? (e) => {
+                            // الإفلات مسموح داخل نفس الفئة فقط
+                            if (!dragId || !lines.some((l) => l.id === dragId)) {
+                              e.dataTransfer.dropEffect = 'none';
+                              return;
+                            }
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                            setOverId(line.id);
+                          }
+                        : undefined
+                    }
+                    onDragLeave={
+                      onReorder
+                        ? () => setOverId((c) => (c === line.id ? null : c))
+                        : undefined
+                    }
+                    onDrop={
+                      onReorder
+                        ? (e) => {
+                            e.preventDefault();
+                            const ids = lines.map((l) => l.id);
+                            const next = moveWithin(ids, dragId, line.id);
+                            setDragId(null);
+                            setOverId(null);
+                            if (next) onReorder(group.brandId, line.categoryName, next);
+                          }
+                        : undefined
+                    }
                     onClick={
                       onProductClick
                         ? () => onProductClick(line.id)
@@ -682,6 +757,7 @@ function BrandBlock({
                         : undefined
                     }
                     style={{
+                      position: 'relative',
                       padding: '3px 8px',
                       background: settings.productColors[line.id]
                         ? hexToRgba(settings.productColors[line.id], 0.18)
@@ -693,6 +769,38 @@ function BrandBlock({
                         : undefined,
                     }}
                   >
+                    {onReorder && (
+                      <span
+                        className="poster-drag-handle"
+                        draggable
+                        title="اسحب لتغيير الترتيب"
+                        aria-label="مقبض السحب"
+                        onClick={(e) => e.stopPropagation()}
+                        onDragStart={(e) => {
+                          setDragId(line.id);
+                          e.dataTransfer.effectAllowed = 'move';
+                          // لازم في فَيرفُكس كي يبدأ السحب أصلاً
+                          e.dataTransfer.setData('text/plain', line.id);
+                          // صورة السحب = السطر كله، مُمسَكاً من نقطة المؤشر
+                          // نفسها (وسط السطر) لا من زاويته، فلا يقفز الشبح.
+                          const row = e.currentTarget.parentElement;
+                          if (row) {
+                            const r = row.getBoundingClientRect();
+                            e.dataTransfer.setDragImage(
+                              row,
+                              e.clientX - r.left,
+                              e.clientY - r.top
+                            );
+                          }
+                        }}
+                        onDragEnd={() => {
+                          setDragId(null);
+                          setOverId(null);
+                        }}
+                      >
+                        <GripIcon />
+                      </span>
+                    )}
                     <span
                       className="font-black tabular-nums"
                       dir="ltr"
@@ -713,7 +821,7 @@ function BrandBlock({
                           className="shrink-0 font-medium"
                           style={{
                             fontSize: productFonts.productStorage,
-                            color: '#64748b',
+                            color: productFonts.storageColor,
                             whiteSpace: 'nowrap',
                           }}
                         >
@@ -732,7 +840,8 @@ function BrandBlock({
                       </span>
                     </span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}

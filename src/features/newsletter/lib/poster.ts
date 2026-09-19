@@ -125,6 +125,8 @@ export interface ProductFonts {
   productName: number;
   productStorage: number;
   price: number;
+  /** لون نص الذاكرة/الرام. */
+  storageColor: string;
 }
 
 export interface ColumnSettings {
@@ -132,8 +134,8 @@ export interface ColumnSettings {
   manual: number;
 }
 
-/** حقل فرز منتجات البراند داخل كل فئة. */
-export type SortField = 'price' | 'name';
+/** حقل فرز منتجات البراند داخل كل فئة. `manual` = ترتيب يدوي بالسحب. */
+export type SortField = 'price' | 'name' | 'manual';
 export type SortDirection = 'asc' | 'desc';
 
 export interface SortSettings {
@@ -152,6 +154,8 @@ export interface PosterSettings {
   productFonts: ProductFonts;
   columns: ColumnSettings;
   sort: SortSettings;
+  /** الترتيب اليدوي: مفتاح الدلو (براند|فئة) -> ترتيب معرّفات المنتجات. */
+  manualOrder: Record<string, string[]>;
     logoSize: number;        // حجم شعار bareq.png (الوسط)
   cornerLogoSize: number;  // حجم logo.jpeg (الزاوية اليسرى)
   productColors: Record<string, string>; // productId -> لون التمييز
@@ -244,6 +248,7 @@ export const DEFAULT_PRODUCT_FONTS: ProductFonts = {
   productName: 11,
   productStorage: 10,
   price: 11,
+  storageColor: '#64748b',
 };
 
 export const DEFAULT_COLUMNS: ColumnSettings = {
@@ -275,6 +280,7 @@ export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
     theme: DEFAULT_THEME,
 
   onlyBrandIds: [],
+  manualOrder: {},
   productColors: {},
   invoiceDate: new Date().toISOString().slice(0, 10),
   warranties: [
@@ -430,48 +436,145 @@ export function warrantiesForBrand(
   );
 }
 
-/**
- * ترتيب منتجَين داخل بلوك البراند:
- * الفئة أولاً (ثابتة دائماً)، ثم حقل الفرز المختار بالاتجاه المختار.
- * المنتجات بلا سعر تبقى في آخر فئتها في الاتجاهين.
- */
-export function compareLines(
-  a: PosterLine,
-  b: PosterLine,
-  sort: SortSettings
-): number {
-  const catDiff =
-    categorySortKey(a.categoryName) - categorySortKey(b.categoryName);
-  if (catDiff !== 0) return catDiff;
+/** مفتاح دلو الترتيب اليدوي: براند واحد + فئة واحدة. */
+export function manualBucketKey(
+  brandId: string,
+  categoryName: string | null
+): string {
+  return `${brandId}|${categoryName ?? ''}`;
+}
 
-  // فئتان مختلفتان بنفس الأولوية (غير معروفتين): رتّبهما أبجدياً
-  // كي تبقيا مجمّعتين بترتيب ثابت بدل أن تتبعثرا حسب السعر.
-  if (a.categoryName !== b.categoryName) {
-    const byCategory = (a.categoryName ?? '').localeCompare(
-      b.categoryName ?? '',
-      'ar'
-    );
-    if (byCategory !== 0) return byCategory;
-  }
+/** عند الوضع اليدوي، أي منتج غير مذكور في الترتيب المحفوظ يُرتَّب بهذا. */
+export const MANUAL_FALLBACK_SORT: SortSettings = {
+  field: 'price',
+  direction: 'asc',
+};
 
-  const dir = sort.direction === 'desc' ? -1 : 1;
-
-  if (sort.field === 'name') {
-    return a.name.localeCompare(b.name, 'ar', { numeric: true }) * dir;
-  }
-
-  // السعر: القيم الفارغة دائماً في الآخر — قبل تطبيق الاتجاه
+/** السعر تصاعدياً مع إبقاء القيم الفارغة في الآخر. */
+function byPriceAsc(a: PosterLine, b: PosterLine): number {
   if (a.price == null && b.price == null) return 0;
   if (a.price == null) return 1;
   if (b.price == null) return -1;
-  return (a.price - b.price) * dir;
+  return a.price - b.price;
+}
+
+/** يقسم أسطر البراند إلى دلاء حسب الفئة، بترتيب الفئات الثابت. */
+export function splitByCategory(
+  lines: PosterLine[]
+): { categoryName: string | null; lines: PosterLine[] }[] {
+  const map = new Map<string, PosterLine[]>();
+  for (const line of lines) {
+    const key = line.categoryName ?? '';
+    const arr = map.get(key) ?? [];
+    arr.push(line);
+    map.set(key, arr);
+  }
+  return [...map.entries()]
+    .map(([key, ls]) => ({ categoryName: key || null, lines: ls }))
+    .sort(
+      (a, b) =>
+        categorySortKey(a.categoryName) - categorySortKey(b.categoryName) ||
+        (a.categoryName ?? '').localeCompare(b.categoryName ?? '', 'ar')
+    );
+}
+
+/**
+ * ترتيب أسطر فئة واحدة مع **إبقاء المنتجات متشابهة الاسم متلاصقة**.
+ *
+ * نرتّب مجموعات الأسماء لا الأسطر المفردة: المجموعة تأخذ موقع أرخص عنصر فيها
+ * (أو أغلاه في التنازلي)، فلا يتسلل منتج بسعر متوسط بين نسختَي نفس المنتج.
+ */
+export function sortCategoryLines(
+  lines: PosterLine[],
+  sort: SortSettings
+): PosterLine[] {
+  const dir = sort.direction === 'desc' ? -1 : 1;
+
+  const groups = new Map<string, PosterLine[]>();
+  for (const line of lines) {
+    const key = line.name.trim().toLowerCase();
+    const arr = groups.get(key) ?? [];
+    arr.push(line);
+    groups.set(key, arr);
+  }
+
+  const entries = [...groups.values()];
+
+  // داخل المجموعة: بالسعر — يتبع الاتجاه عند الفرز بالسعر، وتصاعدي عند الاسم
+  for (const g of entries) {
+    g.sort((a, b) => (sort.field === 'price' ? byPriceAsc(a, b) * dir : byPriceAsc(a, b)));
+  }
+
+  /** سعر المجموعة الممثِّل: الأدنى تصاعدياً والأعلى تنازلياً. */
+  const groupPrice = (g: PosterLine[]): number | null => {
+    const prices = g.map((l) => l.price).filter((v): v is number => v != null);
+    if (prices.length === 0) return null;
+    return dir === 1 ? Math.min(...prices) : Math.max(...prices);
+  };
+
+  entries.sort((ga, gb) => {
+    if (sort.field === 'name') {
+      return ga[0].name.localeCompare(gb[0].name, 'ar', { numeric: true }) * dir;
+    }
+    const pa = groupPrice(ga);
+    const pb = groupPrice(gb);
+    // المجموعات بلا سعر في الآخر دائماً، في الاتجاهين
+    if (pa == null && pb == null)
+      return ga[0].name.localeCompare(gb[0].name, 'ar', { numeric: true });
+    if (pa == null) return 1;
+    if (pb == null) return -1;
+    if (pa !== pb) return (pa - pb) * dir;
+    return ga[0].name.localeCompare(gb[0].name, 'ar', { numeric: true });
+  });
+
+  return entries.flat();
+}
+
+/**
+ * الترتيب اليدوي لدلو واحد. المعرّفات غير المذكورة تُلحق في الآخر بالترتيب
+ * التلقائي، والمعرّفات الميتة تُتجاهل — فإضافة منتج أو حذفه لا تكسر الترتيب.
+ */
+export function applyManualOrder(
+  lines: PosterLine[],
+  order: string[] | undefined
+): PosterLine[] {
+  const base = sortCategoryLines(lines, MANUAL_FALLBACK_SORT);
+  if (!order?.length) return base;
+
+  const rank = new Map(order.map((id, i) => [id, i]));
+  const known = base
+    .filter((l) => rank.has(l.id))
+    .sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
+  const rest = base.filter((l) => !rank.has(l.id));
+  return [...known, ...rest];
+}
+
+/**
+ * ينقل عنصراً داخل نفس القائمة إلى موضع الهدف.
+ * يرجع null إذا كان النقل بلا أثر (لا مصدر، أو الهدف هو المصدر).
+ */
+export function moveWithin(
+  ids: string[],
+  from: string | null,
+  to: string
+): string[] | null {
+  if (!from || from === to) return null;
+  const fromIdx = ids.indexOf(from);
+  const toIdx = ids.indexOf(to);
+  if (fromIdx < 0 || toIdx < 0) return null;
+
+  const out = ids.filter((id) => id !== from);
+  const target = out.indexOf(to);
+  // السحب لأسفل يضع العنصر بعد الهدف، ولأعلى قبله
+  out.splice(fromIdx < toIdx ? target + 1 : target, 0, from);
+  return out;
 }
 
 export function buildPoster(
   products: NewsletterProduct[],
   settings: PosterSettings
 ): PosterBrandGroup[] {
-  const { mode, onlyBrandIds, sort } = settings;
+  const { mode, onlyBrandIds, sort, manualOrder } = settings;
   const groups = new Map<string, PosterBrandGroup>();
 
   for (const p of products) {
@@ -503,7 +606,14 @@ export function buildPoster(
 
   const result = [...groups.values()];
   for (const g of result) {
-    g.lines.sort((a, b) => compareLines(a, b, sort));
+    g.lines = splitByCategory(g.lines).flatMap((bucket) =>
+      sort.field === 'manual'
+        ? applyManualOrder(
+            bucket.lines,
+            manualOrder[manualBucketKey(g.brandId, bucket.categoryName)]
+          )
+        : sortCategoryLines(bucket.lines, sort)
+    );
   }
   result.sort((a, b) => b.lines.length - a.lines.length);
   return result;

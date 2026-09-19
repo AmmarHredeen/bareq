@@ -5,7 +5,11 @@ import { useNewsletter } from '@/features/newsletter/hooks/useNewsletter';
 import { usePersistentSettings } from '@/features/newsletter/hooks/usePersistentSettings';
 import { EmptyState } from '@/components/ui';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { buildPoster } from '@/features/newsletter/lib/poster';
+import {
+  buildPoster,
+  manualBucketKey,
+  splitByCategory,
+} from '@/features/newsletter/lib/poster';
 import { PosterCanvas } from '@/features/newsletter/components/PosterCanvas';
 import { PosterToolbar } from '@/features/newsletter/components/PosterToolbar';
 import {
@@ -48,6 +52,33 @@ export default function NewsletterPage() {
   );
 
   const totalLines = groups.reduce((sum, g) => sum + g.lines.length, 0);
+
+  const handleReorder = (
+    brandId: string,
+    categoryName: string | null,
+    orderedIds: string[]
+  ) => {
+    const next = { ...settings.manualOrder };
+
+    // أول سحب: ثبّت الترتيب المعروض حالياً لكل الدلاء قبل تبديل الوضع،
+    // وإلا قفزت بقية المنتجات إلى الترتيب الافتراضي تحت يد المستخدم.
+    if (settings.sort.field !== 'manual') {
+      for (const g of groups) {
+        for (const bucket of splitByCategory(g.lines)) {
+          next[manualBucketKey(g.brandId, bucket.categoryName)] =
+            bucket.lines.map((l) => l.id);
+        }
+      }
+    }
+
+    next[manualBucketKey(brandId, categoryName)] = orderedIds;
+
+    setSettings({
+      ...settings,
+      sort: { ...settings.sort, field: 'manual' },
+      manualOrder: next,
+    });
+  };
 
   const handleExportPdf = async () => {
     if (!posterRef.current) return;
@@ -143,6 +174,7 @@ export default function NewsletterPage() {
             settings={settings}
             allBrands={brands}
             onProductClick={setEditingId}
+            onReorder={handleReorder}
           />
         </div>
       )}

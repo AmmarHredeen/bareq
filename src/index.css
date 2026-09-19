@@ -257,6 +257,62 @@
   outline-offset: -2px;
 }
 
+/* حالات السحب — تظهر أثناء السحب فقط، والتصدير لا يحدث أثناءه */
+.poster-row-dragging {
+  opacity: 0.3;
+  outline: 1px dashed #0284c7;
+  outline-offset: -1px;
+}
+
+/* خط الإسقاط يدل على الموضع الفعلي: فوق الهدف أو تحته */
+.poster-row-drop-before,
+.poster-row-drop-after {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(2, 132, 199, 0.12),
+    rgba(2, 132, 199, 0.12)
+  );
+}
+
+.poster-row-drop-before {
+  box-shadow: inset 0 3px 0 0 #0284c7;
+}
+
+.poster-row-drop-after {
+  box-shadow: inset 0 -3px 0 0 #0284c7;
+}
+
+/* المقبض يبقى ظاهراً ما دام السحب جارياً */
+.poster-row-dragging .poster-drag-handle {
+  opacity: 1;
+}
+
+/* مقبض السحب — مطلق الموضع في منتصف السطر (المساحة الفارغة بين السعر
+   والاسم)، فلا يزيح شيئاً. مخفي افتراضياً ويظهر عند التحويم فقط،
+   والتصدير لا يحدث أثناء التحويم. التوسيط متماثل فلا يتأثر باتجاه الكتابة. */
+.poster-drag-handle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  opacity: 0;
+  cursor: grab;
+}
+
+.poster-row-reorderable:hover .poster-drag-handle,
+.poster-drag-handle:focus-visible {
+  opacity: 1;
+}
+
+.poster-drag-handle:active {
+  cursor: grabbing;
+}
+
 
 /* ===== طباعة النشرة ===== */
 @media print {

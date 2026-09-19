@@ -14,6 +14,7 @@ import {
   Users,
   Palette,
   PaintBucket,
+  RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button, Input, Select } from '@/components/ui';
@@ -531,6 +532,7 @@ export function PosterToolbar({
             options={[
               { value: 'price', label: 'ترتيب: السعر' },
               { value: 'name', label: 'ترتيب: الاسم' },
+              { value: 'manual', label: 'ترتيب: يدوي' },
             ]}
             onChange={(e) =>
               patch({
@@ -538,21 +540,37 @@ export function PosterToolbar({
               })
             }
           />
-          <Select
-            value={settings.sort.direction}
-            options={[
-              { value: 'asc', label: 'تصاعدي ↑' },
-              { value: 'desc', label: 'تنازلي ↓' },
-            ]}
-            onChange={(e) =>
-              patch({
-                sort: {
-                  ...settings.sort,
-                  direction: e.target.value as SortDirection,
-                },
-              })
-            }
-          />
+          {settings.sort.field === 'manual' ? (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                patch({
+                  sort: { ...settings.sort, field: 'price' },
+                  manualOrder: {},
+                })
+              }
+              title="مسح الترتيب اليدوي والعودة للترتيب بالسعر"
+            >
+              <RotateCcw size={14} />
+              تلقائي
+            </Button>
+          ) : (
+            <Select
+              value={settings.sort.direction}
+              options={[
+                { value: 'asc', label: 'تصاعدي ↑' },
+                { value: 'desc', label: 'تنازلي ↓' },
+              ]}
+              onChange={(e) =>
+                patch({
+                  sort: {
+                    ...settings.sort,
+                    direction: e.target.value as SortDirection,
+                  },
+                })
+              }
+            />
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -654,6 +672,13 @@ export function PosterToolbar({
               onChange={(e) =>
                 patchProductFont('fontFamily', e.target.value)
               }
+            />
+          </div>
+          <div className="mb-3">
+            <ColorField
+              label="لون نص الذاكرة / الرام"
+              value={settings.productFonts.storageColor}
+              onChange={(v) => patchProductFont('storageColor', v)}
             />
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
