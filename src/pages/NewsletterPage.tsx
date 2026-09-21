@@ -27,7 +27,7 @@ export default function NewsletterPage() {
   const products = data?.products ?? [];
   const brands = data?.brands ?? [];
 
-  const { settings, setSettings } = usePersistentSettings();
+  const { settings, setSettings, status: saveStatus } = usePersistentSettings();
 
   const [exporting, setExporting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -154,6 +154,7 @@ export default function NewsletterPage() {
       </div>
 
       <PosterToolbar
+        saveStatus={saveStatus}
         settings={settings}
         onChange={setSettings}
         brands={brands}

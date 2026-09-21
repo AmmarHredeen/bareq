@@ -123,6 +123,27 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_settings: {
+        Row: {
+          id: boolean
+          settings: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           color: string | null

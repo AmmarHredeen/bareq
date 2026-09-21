@@ -15,6 +15,9 @@ import {
   Palette,
   PaintBucket,
   RotateCcw,
+  Loader2,
+  Check,
+  CloudOff,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button, Input, Select } from '@/components/ui';
@@ -34,9 +37,11 @@ import {
   type SortDirection,
 } from '@/features/newsletter/lib/poster';
 import type { NewsletterFilterOption, NewsletterProduct } from '@/services/newsletter.service';
+import type { SaveStatus } from '@/features/newsletter/hooks/usePersistentSettings';
 import { DEFAULT_THEME } from '@/features/newsletter/lib/poster';
 
 interface PosterToolbarProps {
+  saveStatus?: SaveStatus;
   settings: PosterSettings;
   onChange: (s: PosterSettings) => void;
   brands: NewsletterFilterOption[];
@@ -377,7 +382,27 @@ function LogoSizeControl({
   );
 }
 
+/** مؤشر حالة الحفظ في القاعدة. */
+function SaveIndicator({ status }: { status: SaveStatus }) {
+  if (status === 'idle') return null;
+
+  const map = {
+    saving: { icon: Loader2, text: 'يحفظ…', cls: 'text-slate-400', spin: true },
+    saved: { icon: Check, text: 'تم الحفظ', cls: 'text-emerald-600 dark:text-emerald-400', spin: false },
+    error: { icon: CloudOff, text: 'تعذّر الحفظ — محفوظ محلياً', cls: 'text-amber-600 dark:text-amber-400', spin: false },
+  }[status];
+
+  const Icon = map.icon;
+  return (
+    <span className={cn('flex items-center gap-1.5 text-xs font-medium', map.cls)}>
+      <Icon size={14} className={map.spin ? 'animate-spin' : undefined} />
+      {map.text}
+    </span>
+  );
+}
+
 export function PosterToolbar({
+  saveStatus = 'idle',
   settings,
   onChange,
   brands,
@@ -588,7 +613,8 @@ export function PosterToolbar({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <SaveIndicator status={saveStatus} />
           <Button
             variant="secondary"
             onClick={onExportExcel}
