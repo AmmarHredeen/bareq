@@ -26,6 +26,7 @@ function loadSettings(): PosterSettings {
       columns: { ...DEFAULT_COLUMNS, ...(parsed.columns ?? {}) },
       sort: { ...DEFAULT_SORT, ...(parsed.sort ?? {}) },
       manualOrder: parsed.manualOrder ?? {},
+      manualBrandLayout: parsed.manualBrandLayout ?? [],
       theme: { ...DEFAULT_THEME, ...(parsed.theme ?? {}) },
 
     };

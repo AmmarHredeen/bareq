@@ -1,6 +1,8 @@
 import { forwardRef, useMemo, useState } from 'react';
 import {
   distributeIntoColumns,
+  applyBrandLayout,
+  moveBrand,
   computeColumnCount,
   warrantiesForBrand,
   formatPosterPrice,
@@ -29,6 +31,8 @@ interface PosterCanvasProps {
     categoryName: string | null,
     orderedIds: string[]
   ) => void;
+  /** إعادة توزيع البراندات على الأعمدة بالسحب. */
+  onReorderBrands?: (layout: string[][], columnCount: number) => void;
 }
 
 const POSTER_WIDTH = 1240;
@@ -140,7 +144,10 @@ const GripIcon = () => (
 /* ===================== المكوّن الرئيسي ===================== */
 
 export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
-  function PosterCanvas({ groups, settings, onProductClick, onReorder }, ref) {
+  function PosterCanvas(
+    { groups, settings, onProductClick, onReorder, onReorderBrands },
+    ref
+  ) {
     const { contact, productFonts, theme } = settings;
     const gradients = resolveGradients(theme);
 
@@ -154,9 +161,54 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
     }, [groups, productFonts, settings.columns, innerWidth]);
 
     const columns = useMemo(
-      () => distributeIntoColumns(groups, columnCount),
-      [groups, columnCount]
+      () =>
+        settings.manualBrandLayout.length
+          ? applyBrandLayout(groups, settings.manualBrandLayout, columnCount)
+          : distributeIntoColumns(groups, columnCount),
+      [groups, columnCount, settings.manualBrandLayout]
     );
+
+    // حالة سحب البراند ترتفع إلى هنا لأنها تعبر حدود البلوكات
+    const [dragBrand, setDragBrand] = useState<string | null>(null);
+    const [overBrand, setOverBrand] = useState<{
+      id: string;
+      after: boolean;
+    } | null>(null);
+    const [overColumnEnd, setOverColumnEnd] = useState<number | null>(null);
+
+    const clearBrandDrag = () => {
+      setDragBrand(null);
+      setOverBrand(null);
+      setOverColumnEnd(null);
+    };
+
+    /** التوزيع الحالي كمعرّفات — أساس أي نقل. */
+    const currentLayout = () => columns.map((col) => col.map((g) => g.brandId));
+
+    const dropBrandOn = (targetId: string, after: boolean) => {
+      if (!onReorderBrands || !dragBrand || dragBrand === targetId) return;
+      const layout = currentLayout();
+      const toColumn = layout.findIndex((col) => col.includes(targetId));
+      if (toColumn < 0) return;
+      const without = layout[toColumn].filter((id) => id !== dragBrand);
+      const at = without.indexOf(targetId);
+      onReorderBrands(
+        moveBrand(layout, dragBrand, toColumn, after ? at + 1 : at),
+        columns.length
+      );
+      clearBrandDrag();
+    };
+
+    const dropBrandAtColumnEnd = (col: number) => {
+      if (!onReorderBrands || !dragBrand) return;
+      const layout = currentLayout();
+      const without = layout[col].filter((id) => id !== dragBrand);
+      onReorderBrands(
+        moveBrand(layout, dragBrand, col, without.length),
+        columns.length
+      );
+      clearBrandDrag();
+    };
 
     const today = new Date().toISOString().slice(0, 10);
 
@@ -351,8 +403,80 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                     brandGradient={gradients.brand}
                     onProductClick={onProductClick}
                     onReorder={onReorder}
+                    draggableBrand={!!onReorderBrands}
+                    isDragging={dragBrand === group.brandId}
+                    dropEdge={
+                      overBrand?.id === group.brandId && dragBrand
+                        ? overBrand.after
+                          ? 'after'
+                          : 'before'
+                        : null
+                    }
+                    onBrandDragStart={(e) => {
+                      setDragBrand(group.brandId);
+                      e.dataTransfer.effectAllowed = 'move';
+                      e.dataTransfer.setData('text/plain', group.brandId);
+                      const block = e.currentTarget.parentElement;
+                      if (block) {
+                        const r = block.getBoundingClientRect();
+                        e.dataTransfer.setDragImage(
+                          block,
+                          e.clientX - r.left,
+                          e.clientY - r.top
+                        );
+                      }
+                    }}
+                    onBrandDragOver={(e) => {
+                      if (!dragBrand || dragBrand === group.brandId) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.dataTransfer.dropEffect = 'move';
+                      // النصف السفلي = إفلات بعد البلوك
+                      const r = e.currentTarget.getBoundingClientRect();
+                      const after = e.clientY > r.top + r.height / 2;
+                      setOverColumnEnd(null);
+                      setOverBrand((c) =>
+                        c?.id === group.brandId && c.after === after
+                          ? c
+                          : { id: group.brandId, after }
+                      );
+                    }}
+                    onBrandDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const r = e.currentTarget.getBoundingClientRect();
+                      dropBrandOn(
+                        group.brandId,
+                        e.clientY > r.top + r.height / 2
+                      );
+                    }}
+                    onBrandDragEnd={clearBrandDrag}
                   />
                 ))}
+
+                {/* منطقة إفلات في نهاية العمود — تتيح النقل إلى عمود فارغ
+                    أو إلى آخر العمود، وهو متعذّر بأهداف البلوكات وحدها */}
+                {onReorderBrands && dragBrand && (
+                  <div
+                    className={cn(
+                      'poster-column-drop',
+                      overColumnEnd === ci && 'poster-column-drop-active'
+                    )}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setOverBrand(null);
+                      setOverColumnEnd(ci);
+                    }}
+                    onDragLeave={() =>
+                      setOverColumnEnd((c) => (c === ci ? null : c))
+                    }
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      dropBrandAtColumnEnd(ci);
+                    }}
+                  />
+                )}
               </div>
             ))}
           </main>
@@ -558,6 +682,13 @@ function BrandBlock({
   brandGradient,
   onProductClick,
   onReorder,
+  draggableBrand,
+  isDragging,
+  dropEdge,
+  onBrandDragStart,
+  onBrandDragOver,
+  onBrandDrop,
+  onBrandDragEnd,
 }: {
   group: PosterBrandGroup;
   settings: PosterSettings;
@@ -568,6 +699,13 @@ function BrandBlock({
     categoryName: string | null,
     orderedIds: string[]
   ) => void;
+  draggableBrand?: boolean;
+  isDragging?: boolean;
+  dropEdge?: 'before' | 'after' | null;
+  onBrandDragStart?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onBrandDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onBrandDrop?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onBrandDragEnd?: () => void;
 }) {
   const { productFonts } = settings;
   // حالة السحب محلية للبلوك: الإفلات مسموح داخل نفس البراند والفئة فقط
@@ -586,22 +724,36 @@ function BrandBlock({
 
   return (
     <div
-      className="overflow-hidden bg-white"
+      className={cn(
+        'overflow-hidden bg-white',
+        isDragging && 'poster-brand-dragging',
+        dropEdge === 'before' && 'poster-brand-drop-before',
+        dropEdge === 'after' && 'poster-brand-drop-after'
+      )}
       style={{
         borderRadius: 14,
         border: '1px solid #e0f2fe',
         boxShadow: '0 8px 20px -12px rgba(30,64,175,0.35)',
         fontFamily: productFonts.fontFamily,
       }}
+      onDragOver={draggableBrand ? onBrandDragOver : undefined}
+      onDrop={draggableBrand ? onBrandDrop : undefined}
     >
       <div
-        className="text-center font-black uppercase tracking-wide text-white"
+        className={cn(
+          'text-center font-black uppercase tracking-wide text-white',
+          draggableBrand && 'poster-brand-handle'
+        )}
         style={{
           background: `linear-gradient(135deg, ${brandGradient.from} 0%, ${brandGradient.to} 100%)`,
           fontSize: productFonts.brandTitle,
           padding: '7px 8px',
           letterSpacing: '0.6px',
         }}
+        draggable={draggableBrand}
+        title={draggableBrand ? 'اسحب لنقل البراند' : undefined}
+        onDragStart={draggableBrand ? onBrandDragStart : undefined}
+        onDragEnd={draggableBrand ? onBrandDragEnd : undefined}
       >
         {group.brandName}
       </div>

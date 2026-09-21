@@ -156,6 +156,8 @@ export interface PosterSettings {
   sort: SortSettings;
   /** الترتيب اليدوي: مفتاح الدلو (براند|فئة) -> ترتيب معرّفات المنتجات. */
   manualOrder: Record<string, string[]>;
+  /** توزيع البراندات اليدوي: قائمة معرّفات لكل عمود. فارغة = تلقائي. */
+  manualBrandLayout: string[][];
     logoSize: number;        // حجم شعار bareq.png (الوسط)
   cornerLogoSize: number;  // حجم logo.jpeg (الزاوية اليسرى)
   productColors: Record<string, string>; // productId -> لون التمييز
@@ -281,6 +283,7 @@ export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
 
   onlyBrandIds: [],
   manualOrder: {},
+  manualBrandLayout: [],
   productColors: {},
   invoiceDate: new Date().toISOString().slice(0, 10),
   warranties: [
@@ -678,6 +681,66 @@ export function computeColumnCount(
   );
   const byBrands = Math.min(maxByWidth, groups.length);
   return Math.min(byBrands, 8);
+}
+
+/**
+ * يوزّع البراندات على الأعمدة حسب توزيع يدوي محفوظ.
+ *
+ * يتسامح مع تغيّر البيانات: البراندات غير المذكورة تُلحق بأقل الأعمدة حِملاً
+ * (نفس قاعدة التوزيع التلقائي)، والمعرّفات الميتة تُصفّى، ومحتوى الأعمدة
+ * الزائدة يُدمج في الأخير بدل أن يختفي.
+ */
+export function applyBrandLayout(
+  groups: PosterBrandGroup[],
+  layout: string[][],
+  columnCount: number
+): PosterBrandGroup[][] {
+  const count = Math.max(1, columnCount);
+  const byId = new Map(groups.map((g) => [g.brandId, g]));
+  const columns: PosterBrandGroup[][] = Array.from({ length: count }, () => []);
+  const placed = new Set<string>();
+
+  layout.forEach((ids, i) => {
+    // الأعمدة الزائدة عن العدد الحالي تُدمج في الأخير
+    const target = columns[Math.min(i, count - 1)];
+    for (const id of ids) {
+      const g = byId.get(id);
+      if (!g || placed.has(id)) continue;
+      target.push(g);
+      placed.add(id);
+    }
+  });
+
+  const load = (col: PosterBrandGroup[]) =>
+    col.reduce((sum, g) => sum + g.lines.length + 2, 0);
+
+  for (const g of groups) {
+    if (placed.has(g.brandId)) continue;
+    let min = 0;
+    for (let i = 1; i < count; i++) {
+      if (load(columns[i]) < load(columns[min])) min = i;
+    }
+    columns[min].push(g);
+    placed.add(g.brandId);
+  }
+
+  return columns;
+}
+
+/**
+ * ينقل براندًا إلى عمود وموضع محددين، ويرجع التوزيع الجديد كمعرّفات.
+ * `toIndex` هو الموضع المطلوب داخل العمود الهدف بعد إزالة المسحوب.
+ */
+export function moveBrand(
+  layout: string[][],
+  brandId: string,
+  toColumn: number,
+  toIndex: number
+): string[][] {
+  const next = layout.map((col) => col.filter((id) => id !== brandId));
+  const col = next[toColumn] ?? (next[toColumn] = []);
+  col.splice(Math.max(0, Math.min(toIndex, col.length)), 0, brandId);
+  return next;
 }
 
 export function distributeIntoColumns(

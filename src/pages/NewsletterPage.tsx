@@ -80,6 +80,15 @@ export default function NewsletterPage() {
     });
   };
 
+  const handleBrandReorder = (layout: string[][], columnCount: number) => {
+    setSettings({
+      ...settings,
+      // نثبّت عدد الأعمدة عند أول سحب، وإلا عبث التلقائي بالتوزيع اليدوي
+      columns: { ...settings.columns, auto: false, manual: columnCount },
+      manualBrandLayout: layout,
+    });
+  };
+
   const handleExportPdf = async () => {
     if (!posterRef.current) return;
     setExporting(true);
@@ -175,6 +184,7 @@ export default function NewsletterPage() {
             allBrands={brands}
             onProductClick={setEditingId}
             onReorder={handleReorder}
+            onReorderBrands={handleBrandReorder}
           />
         </div>
       )}

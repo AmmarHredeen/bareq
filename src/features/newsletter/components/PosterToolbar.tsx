@@ -507,10 +507,25 @@ export function PosterToolbar({
               })
             }
           />
+          {settings.manualBrandLayout.length > 0 && (
+            <Button
+              variant="secondary"
+              onClick={() =>
+                patch({
+                  manualBrandLayout: [],
+                  columns: { ...settings.columns, auto: true },
+                })
+              }
+              title="مسح توزيع البراندات اليدوي والعودة للتوزيع المتوازن"
+            >
+              <RotateCcw size={14} />
+              توزيع تلقائي
+            </Button>
+          )}
           {!settings.columns.auto && (
             <Select
               value={String(settings.columns.manual)}
-              options={[2, 3, 4, 5, 6, 7, 8].map((n) => ({
+              options={[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({
                 value: String(n),
                 label: `${n}`,
               }))}
