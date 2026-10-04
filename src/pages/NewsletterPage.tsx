@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Megaphone, Package } from 'lucide-react';
+import { Megaphone, Package, ZoomIn, ZoomOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNewsletter } from '@/features/newsletter/hooks/useNewsletter';
 import { usePersistentSettings } from '@/features/newsletter/hooks/usePersistentSettings';
@@ -31,6 +31,7 @@ export default function NewsletterPage() {
 
   const [exporting, setExporting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   const posterRef = useRef<HTMLDivElement>(null);
   const { patch } = useProductMutations();
@@ -174,19 +175,52 @@ export default function NewsletterPage() {
           description="فعّل «يظهر في النشرة» على منتجات نشطة"
         />
       ) : (
-        <div
-          id="poster-print-area"
-          className="overflow-auto rounded-2xl bg-slate-100 p-4 dark:bg-slate-950/40"
-        >
-          <PosterCanvas
-            ref={posterRef}
-            groups={groups}
-            settings={settings}
-            allBrands={brands}
-            onProductClick={setEditingId}
-            onReorder={handleReorder}
-            onReorderBrands={handleBrandReorder}
-          />
+        <div className="space-y-4">
+          <div className="no-print flex items-center gap-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+            <ZoomOut size={18} className="text-slate-400" />
+            <input
+              type="range"
+              min="0.2"
+              max="2"
+              step="0.1"
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-48 cursor-pointer"
+            />
+            <ZoomIn size={18} className="text-slate-400" />
+            <span className="min-w-[4rem] text-sm font-medium text-slate-700 dark:text-slate-300">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => setZoom(1)}
+              className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+            >
+              الحجم الطبيعي
+            </button>
+          </div>
+          <div
+            id="poster-print-area"
+            className="overflow-auto rounded-2xl bg-slate-100 p-4 dark:bg-slate-950/40 flex justify-center"
+          >
+            <div
+              style={{
+                zoom: zoom,
+                transition: 'zoom 0.2s ease-out',
+                width: 'max-content',
+              } as React.CSSProperties & { zoom?: number }}
+            >
+              <PosterCanvas
+                ref={posterRef}
+                groups={groups}
+                settings={settings}
+                allBrands={brands}
+                onProductClick={setEditingId}
+                onReorder={handleReorder}
+                onReorderBrands={handleBrandReorder}
+              />
+            </div>
+          </div>
         </div>
       )}
 
