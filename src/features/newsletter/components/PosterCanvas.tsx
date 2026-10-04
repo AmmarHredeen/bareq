@@ -4,6 +4,7 @@ import {
   applyBrandLayout,
   moveBrand,
   computeColumnCount,
+  estimateColumnWidth,
   warrantiesForBrand,
   formatPosterPrice,
   toEnglishDigits,
@@ -35,9 +36,10 @@ interface PosterCanvasProps {
   onReorderBrands?: (layout: string[][], columnCount: number) => void;
 }
 
-const POSTER_WIDTH = 1240;
+const DEFAULT_POSTER_WIDTH = 1240;
 const PADDING = 24;
 const COL_GAP = 12;
+const BASE_COLUMN_WIDTH = 280;
 
 /* ===================== الأيقونات (SVG مضمّن) ===================== */
 
@@ -151,14 +153,28 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
     const { contact, productFonts, theme } = settings;
     const gradients = resolveGradients(theme);
 
-    const innerWidth = POSTER_WIDTH - PADDING * 2;
+    const baseInnerWidth = DEFAULT_POSTER_WIDTH - PADDING * 2;
 
     const columnCount = useMemo(() => {
       if (!settings.columns.auto) {
         return Math.min(settings.columns.manual, Math.max(1, groups.length));
       }
-      return computeColumnCount(groups, productFonts, innerWidth, COL_GAP);
-    }, [groups, productFonts, settings.columns, innerWidth]);
+      return computeColumnCount(groups, productFonts, baseInnerWidth, COL_GAP);
+    }, [groups, productFonts, settings.columns, baseInnerWidth]);
+
+    const dynamicPosterWidth = useMemo(() => {
+      if (settings.columns.auto) {
+        return Math.max(
+          DEFAULT_POSTER_WIDTH,
+          estimateColumnWidth(groups, productFonts) + PADDING * 2
+        );
+      }
+      const colW = estimateColumnWidth(groups, productFonts);
+      const optimalColW = Math.max(BASE_COLUMN_WIDTH, colW);
+      const requiredInnerWidth =
+        columnCount * optimalColW + Math.max(0, columnCount - 1) * COL_GAP;
+      return Math.max(DEFAULT_POSTER_WIDTH, requiredInnerWidth + PADDING * 2);
+    }, [settings.columns.auto, columnCount, groups, productFonts]);
 
     const columns = useMemo(
       () =>
@@ -223,7 +239,7 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
         className="poster-canvas mx-auto"
         dir="rtl"
         style={{
-          width: POSTER_WIDTH,
+          width: dynamicPosterWidth,
           fontFamily: '"Cairo", "Tajawal", system-ui, sans-serif',
           background:
             'radial-gradient(1200px 600px at 80% -10%, #dbeafe 0%, transparent 60%), linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)',
