@@ -6,21 +6,33 @@ import { jsPDF } from 'jspdf';
  * scale = 2 كافٍ تماماً للوضوح والطباعة (بدل 3 التي تضخّم الحجم).
  */
 async function captureCanvas(
-  
   element: HTMLElement,
   scale: number
 ): Promise<HTMLCanvasElement> {
-  
-  return html2canvas(element, {
-    scale,
-    backgroundColor: '#ffffff',
-    useCORS: true,
-    logging: false,
-    width: element.offsetWidth,
-    height: element.offsetHeight,
-    windowWidth: element.scrollWidth,
-    windowHeight: element.scrollHeight,
-  });
+  const parent = element.parentElement;
+  let originalZoom = '';
+  if (parent) {
+    originalZoom = parent.style.zoom;
+    // Temporarily reset zoom to 1 to capture in full resolution
+    parent.style.zoom = '1';
+  }
+
+  try {
+    return await html2canvas(element, {
+      scale,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
+    });
+  } finally {
+    if (parent) {
+      parent.style.zoom = originalZoom;
+    }
+  }
 }
 
 /**
