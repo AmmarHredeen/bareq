@@ -36,6 +36,10 @@ export interface PosterTheme {
   sloganFrom: string;
   sloganTo: string;
 
+  /** خلفيتا أسطر المنتجات المتناوبتان. اجعلهما متطابقتين للون موحّد. */
+  rowBg: string;
+  rowBgAlt: string;
+
   // اشتقاق تلقائي من الترويسة؟
   brandAuto: boolean;
   discountAuto: boolean;
@@ -56,6 +60,9 @@ export const DEFAULT_THEME: PosterTheme = {
  
     sloganFrom: 'rgba(255,255,255,0.15)', // مثل خلفية التاريخ
   sloganTo: 'rgba(255,255,255,0.25)',
+
+  rowBg: '#ffffff',
+  rowBgAlt: '#f8fafc',
 
   brandAuto: true,
   discountAuto: true,
@@ -86,6 +93,21 @@ export function resolveGradients(theme: PosterTheme) {
 }
 
 
+
+/**
+ * تدرج شريط البراند: لونه المخصص إن وُجد، وإلا تدرج الثيم العام.
+ * يُشتق التدرج من اللون الواحد بنفس معامِلات الاشتقاق التلقائي
+ * في `resolveGradients`، فيبقى الشكل متسقاً.
+ */
+export function brandGradientFor(
+  theme: PosterTheme,
+  brandId: string,
+  brandColors: Record<string, string>
+): { from: string; to: string } {
+  const custom = brandColors[brandId];
+  if (!custom) return resolveGradients(theme).brand;
+  return { from: shadeColor(custom, -0.15), to: shadeColor(custom, 0.25) };
+}
 
 /** وكيل: اسم + رقم + حجم وخط. */
 export interface AgentItem {
@@ -158,6 +180,8 @@ export interface PosterSettings {
   manualOrder: Record<string, string[]>;
   /** توزيع البراندات اليدوي: قائمة معرّفات لكل عمود. فارغة = تلقائي. */
   manualBrandLayout: string[][];
+  /** لون مخصص لكل براند: brandId -> لون. غير المذكور يتبع الثيم. */
+  brandColors: Record<string, string>;
     logoSize: number;        // حجم شعار bareq.png (الوسط)
   cornerLogoSize: number;  // حجم logo.jpeg (الزاوية اليسرى)
   productColors: Record<string, string>; // productId -> لون التمييز
@@ -284,6 +308,7 @@ export const DEFAULT_POSTER_SETTINGS: PosterSettings = {
   onlyBrandIds: [],
   manualOrder: {},
   manualBrandLayout: [],
+  brandColors: {},
   productColors: {},
   invoiceDate: new Date().toISOString().slice(0, 10),
   warranties: [
@@ -419,11 +444,22 @@ function rawPrice(p: NewsletterProduct, mode: PosterMode): number | null {
 
 export const CURRENCY_SYMBOL = '$';
 
+/** ما يُكتب مكان السعر حين لا يكون المنتج متوفراً بسعر بعد. */
+export const SOON_LABEL = 'soon';
+
+/**
+ * الصفر يعني «لا سعر بعد» تماماً كالقيمة الفارغة — فالمنتج غير متوفر.
+ * المفهوم موحّد هنا كي يتبعه العرض والفرز والتصدير معاً.
+ */
+export function isPriceMissing(price: number | null): boolean {
+  return price == null || price === 0;
+}
+
 export function formatPosterPrice(price: number | null): string {
-  if (price == null) return '—';
+  if (isPriceMissing(price)) return SOON_LABEL;
   const value = new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2,
-  }).format(price);
+  }).format(price as number);
   return `${value} ${CURRENCY_SYMBOL}`;
 }
 
@@ -455,10 +491,12 @@ export const MANUAL_FALLBACK_SORT: SortSettings = {
 
 /** السعر تصاعدياً مع إبقاء القيم الفارغة في الآخر. */
 function byPriceAsc(a: PosterLine, b: PosterLine): number {
-  if (a.price == null && b.price == null) return 0;
-  if (a.price == null) return 1;
-  if (b.price == null) return -1;
-  return a.price - b.price;
+  const am = isPriceMissing(a.price);
+  const bm = isPriceMissing(b.price);
+  if (am && bm) return 0;
+  if (am) return 1;
+  if (bm) return -1;
+  return (a.price as number) - (b.price as number);
 }
 
 /** يقسم أسطر البراند إلى دلاء حسب الفئة، بترتيب الفئات الثابت. */
@@ -510,7 +548,9 @@ export function sortCategoryLines(
 
   /** سعر المجموعة الممثِّل: الأدنى تصاعدياً والأعلى تنازلياً. */
   const groupPrice = (g: PosterLine[]): number | null => {
-    const prices = g.map((l) => l.price).filter((v): v is number => v != null);
+    const prices = g
+      .map((l) => l.price)
+      .filter((v): v is number => !isPriceMissing(v));
     if (prices.length === 0) return null;
     return dir === 1 ? Math.min(...prices) : Math.max(...prices);
   };

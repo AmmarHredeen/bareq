@@ -226,6 +226,126 @@ function ProductHighlightSection({
   );
 }
 
+function BrandColorSection({
+  brands,
+  brandColors,
+  onChange,
+}: {
+  brands: NewsletterFilterOption[];
+  brandColors: Record<string, string>;
+  onChange: (colors: Record<string, string>) => void;
+}) {
+  const [selectedId, setSelectedId] = useState('');
+  const [selectedColor, setSelectedColor] = useState('#7c3aed');
+
+  const add = () => {
+    if (!selectedId) return;
+    onChange({ ...brandColors, [selectedId]: selectedColor });
+    setSelectedId('');
+  };
+
+  const remove = (id: string) => {
+    const next = { ...brandColors };
+    delete next[id];
+    onChange(next);
+  };
+
+  const count = Object.keys(brandColors).length;
+
+  return (
+    <Accordion
+      title={
+        <span>
+          لون كل براند
+          {count > 0 && (
+            <span className="ms-2 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-300">
+              {count}
+            </span>
+          )}
+        </span>
+      }
+      icon={Palette}
+    >
+      <p className="mb-2 text-[11px] text-slate-400">
+        البراند بلا لون مخصص يتبع تدرج الثيم العام.
+      </p>
+
+      <div className="mb-3 flex items-end gap-2">
+        <div className="flex-1">
+          <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            اختر البراند
+          </label>
+          <select
+            value={selectedId}
+            onChange={(e) => setSelectedId(e.target.value)}
+            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option value="">-- اختر --</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            اللون
+          </label>
+          <input
+            type="color"
+            value={selectedColor}
+            onChange={(e) => setSelectedColor(e.target.value)}
+            className="h-9 w-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+            style={{ appearance: 'none' }}
+          />
+        </div>
+        <Button variant="secondary" onClick={add} disabled={!selectedId}>
+          <Plus size={14} />
+          إضافة
+        </Button>
+      </div>
+
+      {count === 0 ? (
+        <p className="text-xs text-slate-400">لا توجد براندات ملوّنة بعد.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {brands
+            .filter((b) => brandColors[b.id])
+            .map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-2 dark:border-slate-700"
+                style={{ borderInlineStart: `4px solid ${brandColors[b.id]}` }}
+              >
+                <input
+                  type="color"
+                  value={brandColors[b.id]}
+                  onChange={(e) =>
+                    onChange({ ...brandColors, [b.id]: e.target.value })
+                  }
+                  className="h-6 w-7 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
+                  style={{ appearance: 'none' }}
+                />
+                <span className="flex-1 truncate text-sm text-slate-700 dark:text-slate-200">
+                  {b.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => remove(b.id)}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-red-500 transition hover:bg-red-50 dark:hover:bg-red-500/10"
+                  title="إزالة اللون"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+        </div>
+      )}
+    </Accordion>
+  );
+}
+
 function ColorField({
   label,
   value,
@@ -1033,6 +1153,27 @@ export function PosterToolbar({
 
             <div>
               <p className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                خلفية أسطر المنتجات
+              </p>
+              <p className="mb-2 text-[11px] text-slate-400">
+                اجعل اللونين متطابقين للحصول على لون موحّد بلا تناوب.
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <ColorField
+                  label="السطر الأول"
+                  value={settings.theme.rowBg}
+                  onChange={(v) => patchTheme({ rowBg: v })}
+                />
+                <ColorField
+                  label="السطر المتناوب"
+                  value={settings.theme.rowBgAlt}
+                  onChange={(v) => patchTheme({ rowBgAlt: v })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-bold text-slate-600 dark:text-slate-300">
                 تدرج الفوتر
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1132,6 +1273,12 @@ export function PosterToolbar({
         </Accordion>
 
         {/* تمييز المنتجات بالألوان */}
+        <BrandColorSection
+          brands={brands}
+          brandColors={settings.brandColors}
+          onChange={(brandColors) => patch({ brandColors })}
+        />
+
         <ProductHighlightSection
           products={products}
           productColors={settings.productColors}

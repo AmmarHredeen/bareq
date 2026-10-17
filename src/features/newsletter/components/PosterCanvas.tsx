@@ -9,6 +9,7 @@ import {
   formatPosterPrice,
   toEnglishDigits,
   resolveGradients,
+  brandGradientFor,
   categorySortKey,
   categoryLabel,
   hexToRgba,
@@ -416,7 +417,11 @@ export const PosterCanvas = forwardRef<HTMLDivElement, PosterCanvasProps>(
                     key={group.brandId}
                     group={group}
                     settings={settings}
-                    brandGradient={gradients.brand}
+                    brandGradient={brandGradientFor(
+                      theme,
+                      group.brandId,
+                      settings.brandColors
+                    )}
                     onProductClick={onProductClick}
                     onReorder={onReorder}
                     draggableBrand={!!onReorderBrands}
@@ -930,8 +935,8 @@ function BrandBlock({
                       background: settings.productColors[line.id]
                         ? hexToRgba(settings.productColors[line.id], 0.18)
                         : li % 2 === 1
-                          ? '#f8fafc'
-                          : '#ffffff',
+                          ? settings.theme.rowBgAlt
+                          : settings.theme.rowBg,
                       borderInlineStart: settings.productColors[line.id]
                         ? `4px solid ${settings.productColors[line.id]}`
                         : undefined,

@@ -32,6 +32,7 @@ export function mergeSettings(parsed: Partial<PosterSettings>): PosterSettings {
     sort: { ...DEFAULT_SORT, ...(parsed.sort ?? {}) },
     manualOrder: parsed.manualOrder ?? {},
     manualBrandLayout: parsed.manualBrandLayout ?? [],
+    brandColors: parsed.brandColors ?? {},
     theme: { ...DEFAULT_THEME, ...(parsed.theme ?? {}) },
   };
 }

@@ -5,6 +5,8 @@ import {
   toEnglishDigits,
   type PosterBrandGroup,
   type PosterSettings,
+  isPriceMissing,
+  SOON_LABEL,
 } from '@/features/newsletter/lib/poster';
 
 /** exceljs يطلب ألواناً بصيغة ARGB بدون '#'. */
@@ -103,12 +105,12 @@ export async function buildNewsletterWorkbook(
       const row = sheet.addRow([
         toEnglishDigits(line.name),
         line.storage ? toEnglishDigits(line.storage) : '',
-        line.price ?? '—',
+        isPriceMissing(line.price) ? SOON_LABEL : line.price,
       ]);
 
       const priceCell = row.getCell(3);
       priceCell.alignment = { horizontal: 'center' };
-      if (line.price == null) {
+      if (isPriceMissing(line.price)) {
         priceCell.font = { color: { argb: 'FF94A3B8' } };
       } else {
         priceCell.numFmt = PRICE_FORMAT;
